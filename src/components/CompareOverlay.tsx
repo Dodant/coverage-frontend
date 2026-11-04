@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { Artwork } from "@/lib/artworks";
-import { src, trimMm } from "@/lib/artworks";
+import { editionImage, trimMm } from "@/lib/artworks";
 import { EditionPlaceholder } from "./EditionPlaceholder";
 import { editionLabel } from "./EditionsRail";
 
@@ -43,9 +43,9 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
           const mm = known[i];
           return (
             <figure key={e.key} className="m-0 shrink-0">
-              {e.cover ? (
+              {editionImage(a, e, 1400) ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={src(a, 1400)} alt={`${a.title} — ${editionLabel(e)}`} className="block shadow-[0_30px_60px_-24px_rgb(0_0_0/0.8)]" style={{ height: H, aspectRatio: `${a.w} / ${a.h}` }} />
+                <img src={editionImage(a, e, 1400)!.url} alt={`${a.title} — ${editionLabel(e)}`} className="block max-w-none shadow-[0_30px_60px_-24px_rgb(0_0_0/0.8)]" style={{ height: H, width: "auto" }} />
               ) : (
                 <EditionPlaceholder e={e} workTitle={a.title} tone="dark" style={{ height: H }} />
               )}

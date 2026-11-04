@@ -24,7 +24,8 @@ Next.js 15.5 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Motion 
 | `/` | Hero (wordmark, aurora, floating covers) → Featured Exhibition → Archive index → A World of Colour → Unexpected Discoveries → Private Exhibitions → The Art Beyond the Story |
 | `/archive` | Search, genre / colour / publisher / edition / country / year filters, sort, density, saved-only. Filters sync to `?genre=&color=&q=` |
 | `/artwork/[id]` | Viewing room: palette-reactive aurora, museum label, palette, save, add to exhibition, zoom/pan inspection + fullscreen, related, prev/next (← → keys). Statically generated for every cover |
-| `/collections`, `/collections/[id]` | Private exhibitions in `localStorage`: create, rename, delete, curator's note, reorder, remove; Wall / Shelf / Salon views |
+| `/collections`, `/collections/[id]` | Private exhibitions (mock: `localStorage`; API: account): create, rename, delete, curator's note, remove; Wall / Shelf / Salon views. API mode adds visibility + share link and `/c/[token]` |
+| `/login`, `/signup`, `/account` | API mode only |
 
 ## Design system
 
@@ -42,4 +43,42 @@ Fields such as dominant colour, colour family and aurora palette are computed. O
 
 **Rights:** these are real Changbi covers. Confirm display permission with Changbi before any public deployment.
 
-When the backend is ready, replace `src/lib/artworks.ts` (data source) and `src/lib/store.ts` (favorites/collections → `/api/likes`, `/api/collections`) — components only consume the `Artwork` type and the store hooks.
+## Live data (coverage-backend)
+
+Two data sources, picked at build time:
+
+| `NEXT_PUBLIC_DATA_SOURCE` | Data | Accounts, likes, exhibitions |
+|---|---|---|
+| `mock` (default) | `src/data/artworks.json` | `localStorage` only |
+| `api` | coverage-backend via `/api` | backend (JWT login) |
+
+```bash
+# real backend on :8080 (no CORS there, so Next proxies /api → backend)
+COVERAGE_API_ORIGIN=http://localhost:8080 NEXT_PUBLIC_DATA_SOURCE=api npm run dev
+
+# no backend? a contract-following stand-in with the Changbi set
+npm run mock-api   # :4010 · demo@coverage.test / coverage123
+npm run dev:api    # = COVERAGE_API_ORIGIN=http://localhost:4010 NEXT_PUBLIC_DATA_SOURCE=api next dev
+```
+
+`COVERAGE_API_ORIGIN` is read on the server too (SSR fetches go straight to `${origin}/api`), so set it for `next build` / `next start` as well. Contract: `docs/API_CONTRACT.md`; types: `src/lib/api/types.ts`.
+
+Code: `src/lib/api/` — `client.ts` (fetch wrapper, `ApiError`, one retry after 401), `session.ts` (tokens in `localStorage`, single-flight refresh — refresh tokens are single-use), `endpoints.ts`, `adapt.ts` (backend → `Artwork`/`Edition`), `works.ts` (server loaders), `useWork.ts` (client work cache for the hover fan), `collectionWorks.ts`, `coverIndex.ts`.
+
+| Route (API mode) | Backend |
+|---|---|
+| `/` | `GET /search/browse/latest`, then each work's books |
+| `/archive` | `GET /search` with a query (+ country / language / year / genre / sort); otherwise `GET /search/browse/{latest,genre,country,year}` — search rejects blank queries |
+| `/artwork/o-<uuid>`, `/artwork/t-<uuid>` | `GET /books/original/{id}` / `translated/{id}` + `/books/original/{id}/translations`; like = `POST /likes/{ORIGINAL_COVER\|TRANSLATED_COVER}/{coverId}` |
+| `/login`, `/signup`, `/account` | `/auth/*`, `/users/me` |
+| `/collections`, `/collections/[id]` | `/collections/my`, `/collections/public`, CRUD, items, visibility, duplicate |
+| `/c/[token]` | `GET /collections/shared/{token}` — the only anonymous view of an exhibition |
+
+### Backend gaps the UI works around
+
+- **No Work endpoint.** A "work" is an original + its translations; other publishers' originals of the same work can't be reached. Works mode shows one card per original, resolving translated search hits to their original (`GET /books/translated/{id}`) and preferring a hit that has an image.
+- **Collection items carry only a cover id**, and there's no cover → book lookup. Titles/links come from `coverIndex` (what this browser remembered when adding); other covers show as "Archived cover" linking to the archive. Reorder isn't supported (no order field).
+- **`GET /collections/{id}` requires login even for PUBLIC**, and `/collections/public` summaries have no `shareToken` — anonymous visitors can only open share links.
+- **No "my likes" list**, so there is no Saved page in API mode; the heart is per cover.
+- `POST /collections/{id}/duplicate` returns `items: []` — the UI navigates to the copy and re-fetches.
+- Search facets are always empty, so filter options are fixed lists.

@@ -18,14 +18,15 @@ export function ArtworkImage({
       src={src(a, large ? 1400 : 640)}
       srcSet={srcSet(a)}
       sizes={sizes}
-      width={a.w}
-      height={a.h}
+      width={a.ratioUnknown ? undefined : a.w}
+      height={a.ratioUnknown ? undefined : a.h}
       alt={`${a.title} 표지 — ${a.credit}`}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
       fetchPriority={priority ? "high" : undefined}
       className={`art ${className}`}
-      style={{ aspectRatio: `${a.w} / ${a.h}`, backgroundColor: a.key, ...style }}
+      // Unknown size (API cover without width/height): let the image's own proportions decide — never stretch.
+      style={{ ...(a.ratioUnknown ? {} : { aspectRatio: `${a.w} / ${a.h}` }), backgroundColor: a.key, ...style }}
       draggable={false}
       {...rest}
     />

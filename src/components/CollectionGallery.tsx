@@ -24,8 +24,10 @@ function Controls({ a, i, n, onRemove, onMove }: { a: Artwork; i: number; n: num
   if (!onRemove) return null;
   return (
     <div className="mt-2 flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover/item:opacity-100 md:group-focus-within/item:opacity-100">
+      {onMove && <>
       <button type="button" className="label size-9 rounded-full hover:bg-ink/10 disabled:opacity-30" disabled={i === 0} onClick={() => onMove?.(a.id, -1)} aria-label={`Move ${a.title} earlier`}>←</button>
       <button type="button" className="label size-9 rounded-full hover:bg-ink/10 disabled:opacity-30" disabled={i === n - 1} onClick={() => onMove?.(a.id, 1)} aria-label={`Move ${a.title} later`}>→</button>
+      </>}
       <button type="button" className="label ml-auto h-9 rounded-full px-3 hover:bg-coral" onClick={() => onRemove(a.id)} aria-label={`Remove ${a.title} from exhibition`}>Remove</button>
     </div>
   );

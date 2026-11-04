@@ -7,6 +7,23 @@ export type Genre =
 export type ColorFamily =
   | "red" | "orange" | "yellow" | "green" | "cyan" | "blue" | "violet" | "pink" | "light" | "dark";
 
+/** One cover image of an edition (from the API: a BookCoverResponse). */
+export interface CoverImage {
+  coverId: string;
+  thumb: string | null;
+  full: string | null;
+  /** May be null from the API — then the image's own natural size decides (never stretch). */
+  w: number | null;
+  h: number | null;
+  label: string | null;
+  variantType: string;
+  ribbonStatus: string;
+  usedFrom: string | null;
+  likeCount: number;
+  credits: { name: string; role: string; designerId: string }[];
+  dominantColor: string | null;
+}
+
 /** One published edition of a work (원서 · 번역서 · 판). `cover` = an image is archived. */
 export interface Edition {
   key: string;
@@ -19,6 +36,12 @@ export interface Edition {
   translator: string | null;
   format: string | null;
   cover: boolean;
+  /** API data only: the book this edition is, its representative front cover, other front variants and back cover. */
+  bookId?: string;
+  bookKind?: "ORIGINAL" | "TRANSLATED";
+  image?: CoverImage | null;
+  variants?: CoverImage[];
+  back?: CoverImage | null;
 }
 
 /**
@@ -59,6 +82,12 @@ export interface Artwork {
   light: number;
   family: ColorFamily;
   aurora: string[];
+  /** API data only: where this artwork lives in the backend. */
+  remote?: { kind: "ORIGINAL" | "TRANSLATED"; bookId: string; coverId: string | null; thumb: string | null; full: string | null; likeCount: number; genreLabel: string | null };
+  /** Where the card links; defaults to `/artwork/{id}`. Collection items whose book is unknown use this. */
+  href?: string;
+  /** True when width/height are placeholders; the loaded image supplies the real ratio. */
+  ratioUnknown?: boolean;
 }
 
 export const ARTWORKS = data as Artwork[];
@@ -68,8 +97,21 @@ export const indexOf = (id: string) => ARTWORKS.findIndex((a) => a.id === id);
 /** Catalogue number — stable, museum-style. */
 export const catNo = (a: Artwork) => `CVG–${String(indexOf(a.id) + 1).padStart(4, "0")}`;
 
-export const src = (a: Artwork, size: 640 | 1400 = 640) => `${a.img}-${size}.webp`;
-export const srcSet = (a: Artwork) => `${a.img}-640.webp 640w, ${a.img}-1400.webp ${Math.min(1400, a.w)}w`;
+export const src = (a: Artwork, size: 640 | 1400 = 640) =>
+  a.remote ? (size === 1400 ? a.remote.full ?? a.remote.thumb : a.remote.thumb ?? a.remote.full) ?? "" : `${a.img}-${size}.webp`;
+export const srcSet = (a: Artwork) =>
+  a.remote ? undefined : `${a.img}-640.webp 640w, ${a.img}-1400.webp ${Math.min(1400, a.w)}w`;
+
+/** The image to show for an edition: its own archived cover (API), or the work's cover (mock). */
+export function editionImage(a: Artwork, e: Edition, size: 640 | 1400 = 640): { url: string; w: number | null; h: number | null } | null {
+  if (e.image) {
+    const url = size === 1400 ? e.image.full ?? e.image.thumb : e.image.thumb ?? e.image.full;
+    return url ? { url, w: e.image.w, h: e.image.h } : null;
+  }
+  if (e.cover && !a.remote) return { url: src(a, size), w: a.w, h: a.h };
+  if (e.cover && a.remote) return { url: src(a, size), w: a.ratioUnknown ? null : a.w, h: a.ratioUnknown ? null : a.h };
+  return null;
+}
 
 export const GENRES: Record<Genre, { en: string; kr: string }> = {
   fiction: { en: "Fiction", kr: "소설" },
@@ -163,3 +205,7 @@ export const trimMm = (format: string | null): [number, number] | null => {
   const m = format?.match(/(\d{2,3})\s*[×x]\s*(\d{2,3})/);
   return m ? [Number(m[1]), Number(m[2])] : null;
 };
+
+/** The edition this artwork's own cover belongs to (the book being viewed). */
+export const ownEdition = (a: Artwork): Edition =>
+  a.editions.find((e) => a.remote && e.bookId === a.remote.bookId) ?? a.editions.find((e) => e.cover) ?? a.editions[a.editions.length - 1];

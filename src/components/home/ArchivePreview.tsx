@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { AnimatePresence, motion, useMotionValue, useSpring, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
-import { ARTWORKS, GENRES, type Genre } from "@/lib/artworks";
+import { GENRES, type Artwork, type Genre } from "@/lib/artworks";
+import { useCatalog } from "@/lib/catalog";
 import { ArtworkImage } from "../ArtworkImage";
 import { ArtworkCard } from "../ArtworkCard";
 import { EditorialHeading } from "../EditorialHeading";
@@ -14,12 +15,13 @@ export function ArchivePreview() {
   const [hover, setHover] = useState<Genre | null>(null);
   const x = useMotionValue(0), y = useMotionValue(0);
   const sx = useSpring(x, { stiffness: 300, damping: 30 }), sy = useSpring(y, { stiffness: 300, damping: 30 });
+  const { works: ARTWORKS, live } = useCatalog();
   const genres = useMemo(() => {
-    const m = new Map<Genre, typeof ARTWORKS>();
+    const m = new Map<Genre, Artwork[]>();
     for (const a of ARTWORKS) m.set(a.genre, [...(m.get(a.genre) ?? []), a]);
     return [...m.entries()].sort((a, b) => b[1].length - a[1].length);
-  }, []);
-  const shelf = useMemo(() => ARTWORKS.filter((_, i) => i % 3 === 0).slice(0, 26), []);
+  }, [ARTWORKS]);
+  const shelf = useMemo(() => (live ? ARTWORKS : ARTWORKS.filter((_, i) => i % 3 === 0)).slice(0, 26), [ARTWORKS, live]);
 
   return (
     <section id="archive" aria-labelledby="archive-title" className="relative overflow-hidden bg-museum/60 py-[var(--section-y)]">
@@ -37,7 +39,7 @@ export function ArchivePreview() {
           <span id="archive-title" className="sr-only">The Archive</span>
           <div className="col-span-12 mt-8 md:col-span-4 md:mt-0">
             <p className="kr text-[15px] leading-[1.75] text-ink/80">
-              {ARTWORKS.length}점의 표지를 장르와 색, 출판 연도, 번역 여부로 탐색합니다. 표지는 언제나 원래의 비율 그대로, 어떤 필터도 거치지 않은 채 전시됩니다.
+              {live ? "새로 들어온" : `${ARTWORKS.length}점의`} 표지를 장르와 색, 출판 연도, 번역 여부로 탐색합니다. 표지는 언제나 원래의 비율 그대로, 어떤 필터도 거치지 않은 채 전시됩니다.
             </p>
             <Link href="/archive" className="group mt-6 inline-flex items-center gap-3 border-b border-ink pb-1 font-[family-name:var(--font-grotesk)] text-lg font-medium tracking-[-0.02em]">
               Enter the full archive <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
@@ -53,7 +55,7 @@ export function ArchivePreview() {
           {genres.map(([g, list], i) => (
             <li key={g} className="border-b border-ink/20">
               <Link
-                href={`/archive?genre=${g}`}
+                href={live ? "/archive" : `/archive?genre=${g}`}
                 onPointerEnter={() => setHover(g)}
                 onFocus={() => setHover(g)}
                 onBlur={() => setHover(null)}

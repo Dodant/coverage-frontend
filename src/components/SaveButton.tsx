@@ -3,6 +3,9 @@
 import { AnimatePresence, motion } from "motion/react";
 import { actions, useStore } from "@/lib/store";
 import { EASE_OUT } from "./motion";
+import type { Artwork } from "@/lib/artworks";
+import { USE_API } from "@/lib/api/config";
+import { LikeButton } from "./LikeButton";
 
 export function HeartIcon({ filled, className = "" }: { filled?: boolean; className?: string }) {
   return (
@@ -13,7 +16,14 @@ export function HeartIcon({ filled, className = "" }: { filled?: boolean; classN
 }
 
 /** Favorite toggle with a small "saved" bloom as feedback. */
-export function SaveButton({ id, title, className = "", variant = "chip" }: { id: string; title: string; className?: string; variant?: "chip" | "icon" }) {
+export function SaveButton({ id, title, className = "", variant = "chip", art }: { id: string; title: string; className?: string; variant?: "chip" | "icon"; art?: Artwork }) {
+  // Live data: "save" is the backend's like on this cover.
+  if (USE_API && art?.remote && variant === "chip") return <LikeButton art={art} className={className} />;
+  return <LocalSave id={id} title={title} className={className} variant={variant} />;
+}
+
+/** Favorite kept in this browser (mock data). */
+function LocalSave({ id, title, className = "", variant = "chip" }: { id: string; title: string; className?: string; variant?: "chip" | "icon" }) {
   const { favorites } = useStore();
   const on = favorites.includes(id);
   return (

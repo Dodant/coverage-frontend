@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import type { Artwork } from "@/lib/artworks";
-import { GENRES, archivedCount, editionLangs } from "@/lib/artworks";
+import { GENRES, archivedCount, editionImage, editionLangs } from "@/lib/artworks";
+import { useWork } from "@/lib/api/useWork";
 import { navigateWithArtwork } from "@/lib/transition";
 import { ArtworkImage } from "./ArtworkImage";
 import { SaveButton } from "./SaveButton";
@@ -26,12 +27,16 @@ type Props = {
 };
 
 /** A cover presented as a physical object: lift on hover, essential label only. */
-export function ArtworkCard({ a, sizes, priority, caption = "hover", save = true, className = "", index, stack = false, rowHeight }: Props) {
+export function ArtworkCard({ a: light, sizes, priority, caption = "hover", save = true, className = "", index, stack = false, rowHeight }: Props) {
+  // Live data: a search hit carries no size, colour or editions — expand it to the full work.
+  const a = useWork(light, Boolean(stack && light.remote));
+  const [ratio, setRatio] = useState<number | null>(a.ratioUnknown ? null : a.w / a.h);
+  useEffect(() => { if (!a.ratioUnknown) setRatio(a.w / a.h); }, [a.ratioUnknown, a.w, a.h]);
   const n = a.editions.length;
   const stacked = stack && n > 1;
   const router = useRouter();
   const ref = useRef<HTMLImageElement>(null);
-  const href = `/artwork/${a.id}`;
+  const href = a.href ?? `/artwork/${a.id}`;
 
   // Editions fan: opens after a short hover (so sweeping across the grid doesn't fire it), or by the chip.
   const [fan, setFan] = useState<{ h: number; dir: 1 | -1; room: number } | null>(null);
@@ -41,7 +46,7 @@ export function ArtworkCard({ a, sizes, priority, caption = "hover", save = true
     if (!img) return;
     const r = img.getBoundingClientRect();
     // Same cap as the fan itself: it never grows past ~5.5 cover-widths.
-    const natural = a.editions.reduce((s, e) => s + r.height * (e.cover ? a.w / a.h : 2 / 3) + 10, 20);
+    const natural = a.editions.reduce((s, e) => { const im = editionImage(a, e); return s + r.height * (im?.w && im?.h ? im.w / im.h : 2 / 3) + 10; }, 20);
     const total = Math.min(natural, r.height * (2 / 3) * 5.5 + 20);
     // Deal toward whichever side has room; if neither fits, the fan compresses into the roomier side.
     const roomR = window.innerWidth - r.left - 16, roomL = r.right - 16;
@@ -59,7 +64,7 @@ export function ArtworkCard({ a, sizes, priority, caption = "hover", save = true
   return (
     <figure
       className={`art-hover group relative ${rowHeight ? "flex-none" : ""} ${fan ? "z-30" : ""} ${className}`}
-      style={rowHeight ? { width: `calc(${rowHeight} * ${(a.w / a.h).toFixed(4)})` } : undefined}
+      style={rowHeight ? { width: `calc(${rowHeight} * ${(ratio ?? 2 / 3).toFixed(4)})` } : undefined}
       onPointerEnter={enter}
       onPointerLeave={leave}
     >
@@ -80,7 +85,13 @@ export function ArtworkCard({ a, sizes, priority, caption = "hover", save = true
             </>
           )}
           <div className="art-frame">
-            <ArtworkImage a={a} sizes={sizes} priority={priority} imgRef={ref} />
+            <ArtworkImage
+              a={a}
+              sizes={sizes}
+              priority={priority}
+              imgRef={ref}
+              onLoad={(e) => { const i = e.currentTarget; if (a.ratioUnknown && i.naturalWidth) setRatio(i.naturalWidth / i.naturalHeight); }}
+            />
           </div>
         </div>
         {caption !== "none" && (
@@ -115,7 +126,7 @@ export function ArtworkCard({ a, sizes, priority, caption = "hover", save = true
         </span>
       )}
       <AnimatePresence>{fan && <EditionsFan a={a} height={fan.h} dir={fan.dir} room={fan.room} onClose={() => setFan(null)} />}</AnimatePresence>
-      {save && (
+      {save && !a.remote && (
         <div className="pointer-events-none absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100">
           <SaveButton id={a.id} title={a.title} variant="icon" />
         </div>

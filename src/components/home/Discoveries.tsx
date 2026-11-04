@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { ARTWORKS, GENRES, fmtDate, pick } from "@/lib/artworks";
+import { GENRES, fmtDate, pick } from "@/lib/artworks";
+import { useCatalog } from "@/lib/catalog";
 import { AuroraBackground } from "../AuroraBackground";
 import { ArtworkCard } from "../ArtworkCard";
 import { EditorialHeading } from "../EditorialHeading";
@@ -15,7 +16,8 @@ export function Discoveries() {
   const reduce = useReducedMotion();
   const [seed, setSeed] = useState(11);
   const [draws, setDraws] = useState(0);
-  const hand = pick(ARTWORKS, 3, seed);
+  const { works } = useCatalog();
+  const hand = pick(works, 3, seed);
 
   return (
     <section id="discover" aria-labelledby="discover-title" className="relative isolate overflow-hidden py-[var(--section-y)]">

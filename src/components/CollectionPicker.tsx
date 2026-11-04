@@ -4,9 +4,17 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { actions, useStore } from "@/lib/store";
 import { EASE_OUT } from "./motion";
+import type { Artwork } from "@/lib/artworks";
+import { USE_API } from "@/lib/api/config";
+import { CollectionPickerApi } from "./CollectionPickerApi";
 
 /** "Add to exhibition" popover: toggle membership or start a new exhibition. */
-export function CollectionPicker({ id, className = "" }: { id: string; className?: string }) {
+export function CollectionPicker({ id, className = "", art }: { id: string; className?: string; art?: Artwork }) {
+  if (USE_API && art?.remote) return <CollectionPickerApi art={art} className={className} />;
+  return <LocalPicker id={id} className={className} />;
+}
+
+function LocalPicker({ id, className = "" }: { id: string; className?: string }) {
   const { collections } = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -38,12 +46,13 @@ export function CollectionPicker({ id, className = "" }: { id: string; className
       </button>
       <AnimatePresence>
         {flash && (
-          <motion.p role="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="label absolute -top-7 left-0 whitespace-nowrap text-ink">
+          <motion.p key="flash" role="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="label absolute -top-7 left-0 whitespace-nowrap text-ink">
             {flash}
           </motion.p>
         )}
         {open && (
           <motion.div
+            key="picker"
             role="dialog"
             aria-label="Add to exhibition"
             initial={{ opacity: 0, y: 10, scale: 0.98 }}

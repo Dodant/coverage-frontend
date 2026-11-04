@@ -1,5 +1,8 @@
+import { USE_API } from "@/lib/api/config";
 import { CollectionRoom } from "./CollectionRoom";
+import { CollectionRoomApi } from "./CollectionRoomApi";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  return <CollectionRoom id={(await params).id} />;
+  const { id } = await params;
+  return USE_API ? <CollectionRoomApi id={id} /> : <CollectionRoom id={id} />;
 }

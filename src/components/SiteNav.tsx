@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { EASE_OUT } from "./motion";
 import { ThemeToggle } from "./ThemeToggle";
+import { USE_API } from "@/lib/api/config";
+import { useSession } from "@/lib/api/session";
 
 const LINKS = [
   { href: "/archive", n: "01", en: "Archive", kr: "아카이브" },
@@ -18,6 +20,7 @@ const LINKS = [
 export function SiteNav() {
   const path = usePathname();
   const { favorites, collections } = useStore();
+  const session = useSession();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => setOpen(false), [path]);
@@ -55,6 +58,16 @@ export function SiteNav() {
           </ul>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {USE_API ? (
+              session ? (
+                <Link href="/account" className="label hidden items-center gap-2 rounded-full border border-ink/70 py-1.5 pl-1.5 pr-3.5 hover:bg-ink hover:text-museum sm:flex" aria-label={`Account — ${session.user.displayName}`}>
+                  <span aria-hidden="true" className="flex size-6 items-center justify-center rounded-full bg-ink text-[11px] text-museum">{session.user.displayName.slice(0, 1).toUpperCase()}</span>
+                  <span className="max-w-[10ch] truncate normal-case">{session.user.displayName}</span>
+                </Link>
+              ) : (
+                <Link href={`/login?next=${encodeURIComponent(path)}`} className="label hidden items-center rounded-full border border-ink/70 px-3.5 py-2 hover:bg-ink hover:text-museum sm:flex">Sign in</Link>
+              )
+            ) : (
             <Link href="/collections#favorites" className="label hidden items-center gap-2 rounded-full border border-ink/70 px-3.5 py-2 hover:bg-ink hover:text-museum sm:flex">
               <span>Saved</span>
               <span className="tabular-nums">{String(favorites.length).padStart(2, "0")}</span>
@@ -62,6 +75,7 @@ export function SiteNav() {
               <span className="tabular-nums">{String(collections.length).padStart(2, "0")}</span>
               <span className="sr-only">favorites / exhibitions</span>
             </Link>
+            )}
             <button
               type="button"
               className="label flex size-11 items-center justify-center rounded-full border border-ink/70 md:hidden"
@@ -99,7 +113,13 @@ export function SiteNav() {
                 </motion.li>
               ))}
             </ul>
-            <p className="label mt-8 text-ash">Saved {favorites.length} · Exhibitions {collections.length}</p>
+            {USE_API ? (
+              <Link href={session ? "/account" : `/login?next=${encodeURIComponent(path)}`} onClick={() => setOpen(false)} className="label mt-8 text-ash underline-offset-4 hover:underline">
+                {session ? `Signed in · ${session.user.displayName}` : "Sign in →"}
+              </Link>
+            ) : (
+              <p className="label mt-8 text-ash">Saved {favorites.length} · Exhibitions {collections.length}</p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

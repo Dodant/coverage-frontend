@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { Artwork } from "@/lib/artworks";
-import { FAMILIES, GENRES, LANG_LABEL, auroraVars, editionLangs, fmtDate } from "@/lib/artworks";
+import type { Artwork, CoverImage, Edition } from "@/lib/artworks";
+import { FAMILIES, GENRES, LANG_LABEL, auroraVars, editionLangs, fmtDate, ownEdition } from "@/lib/artworks";
+import { auroraFrom, familyOf } from "@/lib/color";
 import { markViewReady } from "@/lib/transition";
 import { AuroraBackground } from "./AuroraBackground";
 import { ArtworkImage } from "./ArtworkImage";
@@ -18,7 +19,36 @@ import { EditionsRail, editionLabel } from "./EditionsRail";
 import { EditionPlaceholder } from "./EditionPlaceholder";
 import { CompareOverlay } from "./CompareOverlay";
 
-type Props = { a: Artwork; prev: Artwork; next: Artwork; related: Artwork[]; no: string };
+type Props = { a: Artwork; prev?: Artwork | null; next?: Artwork | null; related: Artwork[]; no: string };
+
+/**
+ * The artwork as seen through one edition and one of its cover images. For live data each
+ * edition has its own covers; in mock data only the work's own edition has an image.
+ */
+function viewOf(a: Artwork, own: Edition, sel: Edition, img: CoverImage | null): Artwork | null {
+  if (sel === own && (!img || img.coverId === a.remote?.coverId || !a.remote)) return a;
+  if (!img || !(img.thumb || img.full)) return null;
+  const key = img.dominantColor ?? a.key;
+  return {
+    ...a,
+    w: img.w ?? 2,
+    h: img.h ?? 3,
+    ratioUnknown: !(img.w && img.h),
+    key,
+    family: img.dominantColor ? familyOf(img.dominantColor) : a.family,
+    aurora: img.dominantColor ? auroraFrom(img.dominantColor) : a.aurora,
+    palette: img.dominantColor ? [img.dominantColor] : a.palette,
+    remote: a.remote && {
+      ...a.remote,
+      kind: sel.bookKind ?? a.remote.kind,
+      bookId: sel.bookId ?? a.remote.bookId,
+      coverId: img.coverId,
+      thumb: img.thumb,
+      full: img.full,
+      likeCount: img.likeCount,
+    },
+  };
+}
 
 function Row({ k, v }: { k: string; v?: React.ReactNode }) {
   if (v === null || v === undefined || v === "") return null;
@@ -30,19 +60,28 @@ function Row({ k, v }: { k: string; v?: React.ReactNode }) {
   );
 }
 
-export function ArtworkViewer({ a, prev, next, related, no }: Props) {
+export function ArtworkViewer({ a, prev = null, next = null, related, no }: Props) {
   const router = useRouter();
   const reduce = useReducedMotion();
   const [inspect, setInspect] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const hero = useRef<HTMLImageElement>(null);
   const fam = FAMILIES.find((f) => f.id === a.family)!;
-  const archivedKey = a.editions.find((e) => e.cover)!.key;
+  const own = ownEdition(a);
+  const archivedKey = own.key;
   const [edKey, setEdKey] = useState(archivedKey);
   const [compare, setCompare] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const sel = a.editions.find((e) => e.key === edKey) ?? a.editions.find((e) => e.cover)!;
+  const sel = a.editions.find((e) => e.key === edKey) ?? own;
   const multi = a.editions.length > 1;
+  // Which image of the selected edition: a front variant id, or "back".
+  const [variant, setVariant] = useState<string | null>(null);
+  useEffect(() => setVariant(null), [edKey]);
+  const covers = [...(sel.variants ?? []), ...(sel.back ? [sel.back] : [])];
+  const img = (variant && covers.find((c) => c.coverId === variant)) || sel.image || null;
+  const view = viewOf(a, own, sel, img);
+  const [heroRatio, setHeroRatio] = useState<number | null>(null);
+  useEffect(() => setHeroRatio(view && !view.ratioUnknown ? view.w / view.h : null), [view?.w, view?.h, view?.ratioUnknown, view?.remote?.coverId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Edition selection lives in the URL (?edition=) so a specific edition can be linked.
   useEffect(() => {
@@ -70,12 +109,12 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (inspect || compare || (e.target as HTMLElement).closest("input,textarea,select,[role=dialog]")) return;
-      if (e.key === "ArrowLeft") router.push(`/artwork/${prev.id}`, { scroll: false });
-      if (e.key === "ArrowRight") router.push(`/artwork/${next.id}`, { scroll: false });
+      if (e.key === "ArrowLeft" && prev) router.push(`/artwork/${prev.id}`, { scroll: false });
+      if (e.key === "ArrowRight" && next) router.push(`/artwork/${next.id}`, { scroll: false });
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [router, prev.id, next.id, inspect, compare]);
+  }, [router, prev, next, inspect, compare]);
 
   const note = [
     a.year ? `${a.year}년${a.month ? ` ${a.month}월` : ""} ${a.imprint}에서 펴낸` : `${a.imprint}에서 펴낸`,
@@ -87,24 +126,24 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
 
   return (
     <article className="relative">
-      <section className="relative isolate min-h-[100svh] overflow-hidden" style={auroraVars(a)}>
+      <section className="relative isolate min-h-[100svh] overflow-hidden" style={auroraVars(view ?? a)}>
         <AuroraBackground preset="reactive" grain={0.28} />
         <div className="wrap relative z-[2] pb-16 pt-20 md:pt-24">
           <nav aria-label="Artwork navigation" className="flex items-center justify-between gap-4">
             <Link href="/archive" className="label inline-flex items-center gap-2 hover:underline"><span aria-hidden="true">←</span> Archive</Link>
             <p className="label hidden md:block">{no} · Viewing Room</p>
             <div className="flex items-center gap-1">
-              <Link href={`/artwork/${prev.id}`} scroll={false} className="label inline-flex h-10 items-center rounded-full px-3 hover:bg-ink/10" aria-label={`Previous: ${prev.title}`}>← Prev</Link>
-              <Link href={`/artwork/${next.id}`} scroll={false} className="label inline-flex h-10 items-center rounded-full px-3 hover:bg-ink/10" aria-label={`Next: ${next.title}`}>Next →</Link>
+              {prev && <Link href={`/artwork/${prev.id}`} scroll={false} className="label inline-flex h-10 items-center rounded-full px-3 hover:bg-ink/10" aria-label={`Previous: ${prev.title}`}>← Prev</Link>}
+              {next && <Link href={`/artwork/${next.id}`} scroll={false} className="label inline-flex h-10 items-center rounded-full px-3 hover:bg-ink/10" aria-label={`Next: ${next.title}`}>Next →</Link>}
             </div>
           </nav>
 
           <div className="mt-8 grid grid-cols-12 items-center gap-x-[var(--gutter)] gap-y-12 md:mt-6">
             <div className="col-span-12 flex justify-center md:col-span-7 md:min-h-[70vh] md:items-center">
-              {!sel.cover ? (
+              {!view ? (
                 <div className="flex flex-col items-start gap-4" style={{ width: "min(100%, calc(70vh * 0.6667), 36rem)" }}>
                   <EditionPlaceholder e={sel} workTitle={a.title} className="w-full bg-museum/40" />
-                  <button type="button" onClick={() => notice("표지 제보는 백엔드 연결 후 열립니다 · Cover submissions open once the API is connected.")} className="label inline-flex h-10 items-center rounded-full border border-ink px-4 hover:bg-ink hover:text-museum">＋ Contribute this cover</button>
+                  <button type="button" onClick={() => notice("표지 제보는 준비 중입니다 · Cover submissions are coming soon.")} className="label inline-flex h-10 items-center rounded-full border border-ink px-4 hover:bg-ink hover:text-museum">＋ Contribute this cover</button>
                 </div>
               ) : (
               <button
@@ -112,12 +151,13 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
                 onClick={() => setInspect(true)}
                 className="group relative block cursor-zoom-in"
                 aria-label={`Inspect ${a.title} at full size`}
-                style={{ width: `min(100%, calc(78vh * ${a.w / a.h}), 40rem)` }}
+                style={{ width: `min(100%, calc(78vh * ${heroRatio ?? 2 / 3}), 40rem)` }}
               >
                 <div className="art-frame">
                   <ArtworkImage
-                    key={a.id}
-                    a={a}
+                    key={view.remote?.coverId ?? a.id}
+                    a={view}
+                    onLoad={(e) => { const i = e.currentTarget; if (view.ratioUnknown && i.naturalWidth) setHeroRatio(i.naturalWidth / i.naturalHeight); }}
                     large
                     priority
                     sizes="(max-width:768px) 90vw, 45vw"
@@ -149,20 +189,22 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
                   <p className="label">{editionLabel(sel)}</p>
                 </div>
               )}
-              {!sel.cover ? (
+              {sel !== own ? (
                 <dl className="mt-4 border-b border-ink/15">
                   <Row k="Title 제목" v={sel.title ? <span className="serif-i text-[17px]">{sel.title}</span> : <span className="text-ink/55">원제 미기재 · Not recorded</span>} />
                   <Row k="Language" v={sel.lang ? `${LANG_LABEL[sel.lang]?.en ?? sel.lang} · ${LANG_LABEL[sel.lang]?.kr ?? ""}` : "—"} />
                   <Row k="Country" v={sel.country ?? "—"} />
                   <Row k="Published" v={sel.year ?? "—"} />
                   <Row k="Publisher" v={sel.publisher ?? <span className="text-ink/55">Not recorded</span>} />
-                  <Row k="Cover" v={<span className="text-ink/55">Not yet archived · 표지 미수집</span>} />
+                  <Row k="Translator 옮김" v={sel.translator} />
+                  <Row k="Cover design" v={img?.credits.length ? img.credits.map((c) => c.name).join(", ") : null} />
+                  <Row k="Cover" v={view ? [img?.label, img?.variantType && img.variantType !== "UNKNOWN" ? img.variantType.toLowerCase() : null].filter(Boolean).join(" · ") || "Archived" : <span className="text-ink/55">Not yet archived · 표지 미수집</span>} />
                 </dl>
               ) : (
               <dl className="mt-8 border-b border-ink/15">
                 <Row k="Author 저자" v={a.authors} />
                 <Row k="Illustrator 그림" v={a.illustrators.join(", ") || null} />
-                <Row k="Cover design" v={<span className="text-ink/55">Not recorded · 표지 디자이너 미기재</span>} />
+                <Row k="Cover design" v={img?.credits.filter((c) => c.role !== "ILLUSTRATION").length ? img.credits.filter((c) => c.role !== "ILLUSTRATION").map((c) => c.name).join(", ") : <span className="text-ink/55">Not recorded · 표지 디자이너 미기재</span>} />
                 <Row k="Translator 옮김" v={a.translator} />
                 <Row k="Original title" v={a.originalTitle && <span className="serif-i text-[16px]">{a.originalTitle}</span>} />
                 <Row k="Publisher" v={a.imprint} />
@@ -174,11 +216,11 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
               </dl>
               )}
 
-              {sel.cover && (
+              {view && view.palette.length > 0 && (
               <div className="mt-6">
                 <p className="label mb-2 text-ink/60">Palette · 색 기록</p>
                 <ul className="flex flex-wrap gap-1.5">
-                  {a.palette.map((hex, i) => (
+                  {view.palette.map((hex, i) => (
                     <li key={hex + i}>
                       <button
                         type="button"
@@ -197,15 +239,15 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
 
               <div className="mt-8 flex flex-wrap items-center gap-2">
                 {multi && <button type="button" onClick={() => setCompare(true)} className="label inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-museum hover:bg-violet">⇄ Compare {a.editions.length} editions</button>}
-                {sel.cover && <SaveButton id={a.id} title={a.title} />}
-                {sel.cover && <CollectionPicker id={a.id} />}
-                {sel.cover && <button type="button" onClick={() => setInspect(true)} className="label inline-flex h-11 items-center gap-2 rounded-full px-4 hover:bg-ink/10">⤢ Inspect</button>}
+                {view && <SaveButton id={a.id} title={a.title} art={view} />}
+                {view && <CollectionPicker id={a.id} art={view} />}
+                {view && <button type="button" onClick={() => setInspect(true)} className="label inline-flex h-11 items-center gap-2 rounded-full px-4 hover:bg-ink/10">⤢ Inspect</button>}
               </div>
             </motion.div>
           </div>
 
           <div className="mt-14">
-            <EditionsRail a={a} current={sel.key} onSelect={selectEdition} notice={notice} />
+            <EditionsRail a={a} current={sel.key} onSelect={selectEdition} notice={notice} variant={img?.coverId ?? null} onVariant={setVariant} />
           </div>
         </div>
       </section>
@@ -226,7 +268,7 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
           ))}
         </ul>
 
-        <nav aria-label="Previous and next artwork" className="mt-[var(--section-y)] grid grid-cols-2 border-t border-ink/30">
+        {prev && next && <nav aria-label="Previous and next artwork" className="mt-[var(--section-y)] grid grid-cols-2 border-t border-ink/30">
           {[{ w: prev, dir: "Previous", arrow: "←" }, { w: next, dir: "Next", arrow: "→" }].map(({ w, dir, arrow }, i) => (
             <Link key={dir} href={`/artwork/${w.id}`} className={`group flex items-center gap-5 py-6 ${i ? "flex-row-reverse border-l border-ink/30 pl-4 text-right" : "pr-4"}`}>
               <div className="w-14 shrink-0 md:w-20"><ArtworkImage a={w} sizes="80px" /></div>
@@ -236,10 +278,10 @@ export function ArtworkViewer({ a, prev, next, related, no }: Props) {
               </div>
             </Link>
           ))}
-        </nav>
+        </nav>}
       </section>
 
-      <AnimatePresence>{inspect && <InspectOverlay a={a} onClose={() => setInspect(false)} />}</AnimatePresence>
+      <AnimatePresence>{inspect && view && <InspectOverlay a={view} onClose={() => setInspect(false)} />}</AnimatePresence>
       <AnimatePresence>{compare && <CompareOverlay a={a} onClose={() => setCompare(false)} />}</AnimatePresence>
       <AnimatePresence>
         {toast && (

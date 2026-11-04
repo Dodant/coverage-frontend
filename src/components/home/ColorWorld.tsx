@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
-import { ARTWORKS, FAMILIES, auroraVars, type Artwork, type ColorFamily } from "@/lib/artworks";
+import { FAMILIES, auroraVars, type Artwork, type ColorFamily } from "@/lib/artworks";
+import { useCatalog } from "@/lib/catalog";
 import { AuroraBackground } from "../AuroraBackground";
 import { ArtworkCard } from "../ArtworkCard";
 import { ArtworkImage } from "../ArtworkImage";
@@ -27,14 +28,15 @@ export function ColorWorld() {
   const reduce = useReducedMotion();
   const [family, setFamily] = useState<ColorFamily>("blue");
   const [peek, setPeek] = useState<Artwork | null>(null);
+  const { works: ARTWORKS, live } = useCatalog();
   const spectrum = useMemo(
     () => [...ARTWORKS].sort((a, b) => {
       const n = (x: Artwork) => (x.family === "light" ? 1000 + x.light : x.family === "dark" ? 2000 - x.light : x.hue < 12 ? x.hue + 360 : x.hue);
       return n(a) - n(b);
     }),
-    [],
+    [ARTWORKS],
   );
-  const works = useMemo(() => ARTWORKS.filter((a) => a.family === family).sort((a, b) => b.sat - a.sat).slice(0, 8), [family]);
+  const works = useMemo(() => ARTWORKS.filter((a) => a.family === family).sort((a, b) => b.sat - a.sat).slice(0, 8), [family, ARTWORKS]);
   const fam = FAMILIES.find((f) => f.id === family)!;
   const vars = peek
     ? auroraVars(peek)
@@ -122,7 +124,7 @@ export function ColorWorld() {
           <div className="col-span-12 md:col-span-3">
             <p aria-live="polite" className="display text-[clamp(2.6rem,6vw,6rem)] leading-[0.85]">{fam.en}</p>
             <p className="label mt-3 opacity-75">{ARTWORKS.filter((a) => a.family === family).length} covers · {fam.kr}</p>
-            <Link href={`/archive?color=${family}`} className="mt-6 inline-flex border-b border-current pb-1 text-sm font-medium">See all in the archive →</Link>
+            <Link href={live ? "/archive" : `/archive?color=${family}`} className="mt-6 inline-flex border-b border-current pb-1 text-sm font-medium">See all in the archive →</Link>
           </div>
           <ul className="col-span-12 mt-10 flex flex-wrap items-end gap-3 md:col-span-9 md:mt-0 md:gap-4">
             <AnimatePresence mode="popLayout">

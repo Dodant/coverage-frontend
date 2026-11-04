@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import type { Artwork, Edition } from "@/lib/artworks";
-import { src } from "@/lib/artworks";
+import { editionImage, ownEdition } from "@/lib/artworks";
 import { EditionPlaceholder } from "./EditionPlaceholder";
 import { EASE_OUT } from "./motion";
 
@@ -31,7 +31,7 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
 
   // The archived cover stays exactly over the card; the others deal out from behind it.
   // Dealt leftwards, the fan reads chronologically left → right (original first).
-  const own = a.editions.find((e) => e.cover)!;
+  const own = ownEdition(a);
   const others = a.editions.filter((e) => e !== own);
   const all: Edition[] = [own, ...(dir === -1 ? [...others].reverse() : others)];
   const overflow = all.length > MAX_SHOWN ? all.length - (MAX_SHOWN - 1) : 0;
@@ -39,11 +39,12 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
   type Item = { kind: "edition"; e: Edition } | { kind: "more"; n: number };
   const items: Item[] = [...shown.map((e) => ({ kind: "edition" as const, e })), ...(overflow ? [{ kind: "more" as const, n: overflow }] : [])];
 
-  const widthOf = (it: Item) => height * (it.kind === "more" ? 0.36 : it.e.cover ? a.w / a.h : PLACEHOLDER_RATIO);
+  const ratioOf = (e: Edition) => { const im = editionImage(a, e); return im ? (im.w && im.h ? im.w / im.h : PLACEHOLDER_RATIO) : PLACEHOLDER_RATIO; };
+  const widthOf = (it: Item) => height * (it.kind === "more" ? 0.36 : ratioOf(it.e));
   const natural = items.reduce((s, it) => s + widthOf(it), 0) + GAP * (items.length - 1);
   // `room` = space from the card's anchored edge to the viewport edge on the dealing side.
   const maxW = Math.max(widthOfOwn(), Math.min(room - PAD * 2, height * PLACEHOLDER_RATIO * MAX_SPAN_IN_COVERS));
-  function widthOfOwn() { return height * (a.w / a.h) * 1.6; }
+  function widthOfOwn() { return height * ratioOf(own) * 1.6; }
   const compressed = natural > maxW;
 
   // Left edge of each item, measured from the anchored side.
@@ -108,10 +109,11 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
                   </span>
                 )}
                 {it.kind === "edition" ? (
-                  <Link href={it.e.cover ? `/artwork/${a.id}` : `/artwork/${a.id}?edition=${it.e.key}`} className="block outline-offset-2" onClick={onClose} aria-label={`${a.title} — ${label(it.e)}`}>
-                    {it.e.cover ? (
+                  <Link href={it.e === own ? `/artwork/${a.id}` : `/artwork/${a.id}?edition=${it.e.key}`} className="block outline-offset-2" onClick={onClose} aria-label={`${a.title} — ${label(it.e)}`}>
+                    {editionImage(a, it.e) ? (
+                      // Height fixed, width from the image's own proportions — never stretched.
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={src(a)} alt="" className="block w-full shadow-[0_6px_14px_-6px_rgb(0_0_0/0.35)]" style={{ height, aspectRatio: `${a.w} / ${a.h}` }} />
+                      <img src={editionImage(a, it.e)!.url} alt="" className="block max-w-none shadow-[0_6px_14px_-6px_rgb(0_0_0/0.35)]" style={{ height, width: "auto" }} />
                     ) : (
                       <div className="bg-museum shadow-[0_6px_14px_-6px_rgb(0_0_0/0.25)]">
                         <EditionPlaceholder e={it.e} workTitle={a.title} size="sm" style={{ height }} />

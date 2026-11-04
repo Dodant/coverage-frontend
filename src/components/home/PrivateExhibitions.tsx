@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ARTWORKS, BY_ID, pick, type Artwork } from "@/lib/artworks";
+import { BY_ID, pick, type Artwork } from "@/lib/artworks";
+import { useCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { ArtworkImage } from "../ArtworkImage";
 import { EditorialHeading, Reveal } from "../EditorialHeading";
@@ -35,16 +36,19 @@ function Fan({ works }: { works: Artwork[] }) {
 
 export function PrivateExhibitions() {
   const { collections, favorites } = useStore();
+  const { works: ARTWORKS, live } = useCatalog();
   const samples = useMemo(
     () => [
       { name: "Blue Hours", kr: "푸른 시간", works: ARTWORKS.filter((a) => a.family === "blue").slice(0, 4) },
       { name: "Small Hands", kr: "작은 손들", works: ARTWORKS.filter((a) => a.genre === "picture").slice(0, 4) },
       { name: "Verse in Saffron", kr: "치자빛 시", works: pick(ARTWORKS.filter((a) => a.genre === "poetry" && ["yellow", "orange"].includes(a.family)), 4, 3) },
     ],
-    [],
+    [ARTWORKS],
   );
-  const mine = collections.filter((c) => c.ids.length).slice(0, 3).map((c) => ({ name: c.name, kr: `${c.ids.length} works`, works: c.ids.map((id) => BY_ID.get(id)!).filter(Boolean), id: c.id }));
-  const shown = mine.length ? mine : samples;
+  const mine = live ? [] : collections.filter((c) => c.ids.length).slice(0, 3).map((c) => ({ name: c.name, kr: `${c.ids.length} works`, works: c.ids.map((id) => BY_ID.get(id)!).filter(Boolean), id: c.id }));
+  const usable = samples.filter((x) => x.works.length >= 2);
+  const fallback = usable.length ? usable : [{ name: "Just Arrived", kr: "새로 들어온 표지", works: ARTWORKS.slice(0, 4) }];
+  const shown = mine.length ? mine : fallback;
 
   return (
     <section id="exhibitions" aria-labelledby="exh-title" className="relative py-[var(--section-y)]">

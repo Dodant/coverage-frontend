@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue } from "motion/react";
 import { useRef } from "react";
 import type { Artwork } from "@/lib/artworks";
-import { ARTWORKS, YEARS } from "@/lib/artworks";
+import { useCatalog } from "@/lib/catalog";
 import { navigateWithArtwork } from "@/lib/transition";
 import { AuroraBackground } from "../AuroraBackground";
 import { AnimatedWordmark } from "../AnimatedWordmark";
@@ -82,7 +82,7 @@ export function Hero({ covers }: { covers: Artwork[] }) {
         initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1, duration: 0.9 }}
       >
         <p className="label md:col-span-3">Nº 001<span className="md:hidden"> · Museum of Cover Art</span><span className="hidden md:inline"><br />An Experimental Digital<br />Museum of Book Cover Art</span></p>
-        <p className="label hidden md:col-span-3 md:col-start-6 md:block">Collection I — Changbi<br />{ARTWORKS.length} works on view<br />{YEARS[0]} — {YEARS[YEARS.length - 1]}</p>
+        <HeroIndex />
         <p className="label hidden text-right md:col-span-3 md:col-start-10 md:block">37.5665° N, 126.9780° E<br />Seoul / Online<br />Open always</p>
       </motion.div>
 
@@ -128,5 +128,17 @@ export function Hero({ covers }: { covers: Artwork[] }) {
         <span id="hero-title" className="sr-only">COVERAGE — Every Cover Is a World</span>
       </div>
     </section>
+  );
+}
+
+function HeroIndex() {
+  const { works, live } = useCatalog();
+  const years = works.map((w) => w.year).filter(Boolean) as number[];
+  return (
+    <p className="label hidden md:col-span-3 md:col-start-6 md:block">
+      {live ? "Live archive" : "Collection I — Changbi"}<br />
+      {live ? "Newest arrivals" : `${works.length} works on view`}<br />
+      {years.length ? `${Math.min(...years)} — ${Math.max(...years)}` : ""}
+    </p>
   );
 }
