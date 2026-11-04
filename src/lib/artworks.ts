@@ -1,0 +1,165 @@
+import data from "@/data/artworks.json";
+
+export type Genre =
+  | "fiction" | "poetry" | "children" | "picture" | "ya" | "nonfiction"
+  | "essay" | "criticism" | "comics" | "periodical";
+
+export type ColorFamily =
+  | "red" | "orange" | "yellow" | "green" | "cyan" | "blue" | "violet" | "pink" | "light" | "dark";
+
+/** One published edition of a work (원서 · 번역서 · 판). `cover` = an image is archived. */
+export interface Edition {
+  key: string;
+  kind: "original" | "translation";
+  lang: string | null;
+  country: string | null;
+  title: string | null;
+  year: number | null;
+  publisher: string | null;
+  translator: string | null;
+  format: string | null;
+  cover: boolean;
+}
+
+/**
+ * An Artwork is one archived cover. In this dataset every work has exactly one archived
+ * cover (the Changbi edition), so an Artwork also stands for its work; `editions` lists
+ * every edition known for that work, archived or not.
+ */
+export interface Artwork {
+  id: string;
+  img: string;
+  title: string;
+  subtitle: string | null;
+  credit: string;
+  authors: string | null;
+  illustrators: string[];
+  translator: string | null;
+  originalTitle: string | null;
+  series: string | null;
+  volume: string | null;
+  genre: Genre;
+  kind: string;
+  imprint: string;
+  year: number | null;
+  month: number | null;
+  format: string | null;
+  pages: number | null;
+  price: number | null;
+  w: number;
+  h: number;
+  translated: boolean;
+  editions: Edition[];
+  language: string | null;
+  country: string | null;
+  palette: string[];
+  key: string;
+  hue: number;
+  sat: number;
+  light: number;
+  family: ColorFamily;
+  aurora: string[];
+}
+
+export const ARTWORKS = data as Artwork[];
+export const BY_ID = new Map(ARTWORKS.map((a) => [a.id, a]));
+export const getArtwork = (id: string) => BY_ID.get(id);
+export const indexOf = (id: string) => ARTWORKS.findIndex((a) => a.id === id);
+/** Catalogue number — stable, museum-style. */
+export const catNo = (a: Artwork) => `CVG–${String(indexOf(a.id) + 1).padStart(4, "0")}`;
+
+export const src = (a: Artwork, size: 640 | 1400 = 640) => `${a.img}-${size}.webp`;
+export const srcSet = (a: Artwork) => `${a.img}-640.webp 640w, ${a.img}-1400.webp ${Math.min(1400, a.w)}w`;
+
+export const GENRES: Record<Genre, { en: string; kr: string }> = {
+  fiction: { en: "Fiction", kr: "소설" },
+  poetry: { en: "Poetry", kr: "시" },
+  children: { en: "Children", kr: "어린이" },
+  picture: { en: "Picture Books", kr: "그림책" },
+  ya: { en: "Young Adult", kr: "청소년" },
+  nonfiction: { en: "Nonfiction", kr: "인문·교양" },
+  essay: { en: "Essays", kr: "산문" },
+  criticism: { en: "Criticism", kr: "평론" },
+  comics: { en: "Comics", kr: "만화" },
+  periodical: { en: "Periodicals", kr: "잡지" },
+};
+
+export const FAMILIES: { id: ColorFamily; en: string; kr: string; swatch: string }[] = [
+  { id: "red", en: "Vermilion", kr: "주홍", swatch: "#e5432f" },
+  { id: "orange", en: "Amber", kr: "호박", swatch: "#ee8a3c" },
+  { id: "yellow", en: "Saffron", kr: "치자", swatch: "#f0cf3a" },
+  { id: "green", en: "Verdant", kr: "초록", swatch: "#3e9d5b" },
+  { id: "cyan", en: "Lagoon", kr: "옥색", swatch: "#41b7c4" },
+  { id: "blue", en: "Cobalt", kr: "쪽빛", swatch: "#345cff" },
+  { id: "violet", en: "Violet", kr: "보라", swatch: "#643de8" },
+  { id: "pink", en: "Rose", kr: "분홍", swatch: "#e769a4" },
+  { id: "light", en: "Bone", kr: "백색", swatch: "#ece7da" },
+  { id: "dark", en: "Ink", kr: "먹색", swatch: "#2a2830" },
+];
+
+export const IMPRINTS = [...new Set(ARTWORKS.map((a) => a.imprint))];
+export const YEARS = [...new Set(ARTWORKS.map((a) => a.year).filter(Boolean) as number[])].sort();
+export const COUNTRIES = [...new Set(ARTWORKS.map((a) => a.country).filter(Boolean) as string[])];
+export const LANGUAGES = [...new Set(ARTWORKS.map((a) => a.language).filter(Boolean) as string[])];
+
+export const auroraVars = (a: Artwork) => ({
+  "--a1": a.aurora[0],
+  "--a2": a.aurora[1],
+  "--a3": a.aurora[2],
+  "--a4": a.aurora[0],
+  "--a5": a.aurora[1],
+}) as React.CSSProperties;
+
+/** Deterministic pseudo-random — stable across server & client renders. */
+export function seeded(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+export function pick<T>(list: T[], n: number, seed: number) {
+  const r = seeded(seed);
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n);
+}
+
+export const related = (a: Artwork, n = 8) => {
+  const score = (b: Artwork) =>
+    (b.series && b.series === a.series ? 5 : 0) +
+    (b.genre === a.genre ? 2 : 0) +
+    (b.family === a.family ? 2 : 0) +
+    (Math.abs((b.year ?? 0) - (a.year ?? 0)) <= 1 ? 1 : 0) -
+    Math.min(Math.abs(b.hue - a.hue), 360 - Math.abs(b.hue - a.hue)) / 120;
+  return ARTWORKS.filter((b) => b.id !== a.id).sort((x, y) => score(y) - score(x)).slice(0, n);
+};
+
+export const fmtDate = (a: Artwork) => (a.year ? `${a.year}${a.month ? "." + String(a.month).padStart(2, "0") : ""}` : "—");
+
+/** Curated selections for the homepage. */
+export const EXHIBITION_IDS = (() => {
+  // Poetry & fiction with expressive colour — sorted by saturation.
+  const pool = ARTWORKS.filter((a) => ["poetry", "fiction", "picture"].includes(a.genre) && a.sat > 0.35);
+  return pool.sort((a, b) => b.sat - a.sat).slice(0, 7).map((a) => a.id);
+})();
+
+export const LANG_LABEL: Record<string, { en: string; kr: string }> = {
+  KO: { en: "Korean", kr: "한국어" }, EN: { en: "English", kr: "영어" }, ES: { en: "Spanish", kr: "스페인어" },
+  FR: { en: "French", kr: "프랑스어" }, DE: { en: "German", kr: "독일어" }, JA: { en: "Japanese", kr: "일본어" },
+  IT: { en: "Italian", kr: "이탈리아어" }, LZH: { en: "Classical Chinese", kr: "한문" },
+};
+export const EDITION_LANGS = [...new Set(ARTWORKS.flatMap((a) => a.editions.map((e) => e.lang)).filter(Boolean) as string[])];
+export const archivedCount = (a: Artwork) => a.editions.filter((e) => e.cover).length;
+export const editionLangs = (a: Artwork) => [...new Set(a.editions.map((e) => e.lang ?? "?"))];
+/** Trim size in mm parsed from e.g. "122×188mm"; null when unknown or non-numeric (신국판 …). */
+export const trimMm = (format: string | null): [number, number] | null => {
+  const m = format?.match(/(\d{2,3})\s*[×x]\s*(\d{2,3})/);
+  return m ? [Number(m[1]), Number(m[2])] : null;
+};

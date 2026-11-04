@@ -1,0 +1,69 @@
+"use client";
+
+import type { Artwork, Edition } from "@/lib/artworks";
+import { src } from "@/lib/artworks";
+import { EditionPlaceholder } from "./EditionPlaceholder";
+
+export const editionLabel = (e: Edition) => `${e.lang ?? "??"}${e.country && e.kind === "original" && e.lang !== "KO" ? ` · ${e.country}` : ""} · ${e.year ?? "—"}`;
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="shrink-0">
+      <p className="label mb-3">{title}</p>
+      <div className="flex items-end gap-4">{children}</div>
+    </div>
+  );
+}
+
+/** Editions of one work, grouped: original · translations · variants of this edition · redesigns. */
+export function EditionsRail({ a, current, onSelect, notice }: { a: Artwork; current: string; onSelect: (key: string) => void; notice: (t: string) => void }) {
+  const originals = a.editions.filter((e) => e.kind === "original");
+  const translations = a.editions.filter((e) => e.kind === "translation");
+  const sel = a.editions.find((e) => e.key === current)!;
+
+  const Item = ({ e }: { e: Edition }) => {
+    const on = e.key === current;
+    return (
+      <button type="button" aria-pressed={on} onClick={() => onSelect(e.key)} className="group block w-[5.5rem] text-left md:w-[6.75rem]">
+        {e.cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src(a)} alt="" className={`block w-full shadow-[0_8px_18px_-8px_rgb(0_0_0/0.4)] transition-transform duration-300 group-hover:-translate-y-1 ${on ? "outline outline-2 outline-offset-4 outline-ink" : ""}`} style={{ aspectRatio: `${a.w} / ${a.h}` }} />
+        ) : (
+          <EditionPlaceholder e={e} workTitle={a.title} size="sm" className={`transition-transform duration-300 group-hover:-translate-y-1 ${on ? "outline outline-2 outline-offset-4 outline-ink" : ""}`} />
+        )}
+        <span className={`label mt-2 block text-[10px] ${on ? "font-medium" : "text-ink/70"}`}>{editionLabel(e)} {on ? "●" : e.cover ? "" : "◌"}</span>
+      </button>
+    );
+  };
+
+  const chip = "label inline-flex h-9 items-center rounded-full px-3.5 text-[10px]";
+  return (
+    <div className="-mx-[var(--gutter)] overflow-x-auto border-t border-ink bg-museum/80 px-[var(--gutter)] pb-8 pt-5 backdrop-blur-sm">
+      <div className="flex w-max items-end gap-8 md:gap-11">
+        {originals.length > 0 && <Group title={`Original · 원서`}>{originals.map((e) => <Item key={e.key} e={e} />)}</Group>}
+        {translations.length > 0 && (
+          <>
+            <span aria-hidden="true" className="w-px self-stretch bg-ink/20" />
+            <Group title={`Translations · 번역서 (${translations.length})`}>
+              {translations.map((e) => <Item key={e.key} e={e} />)}
+              <button type="button" onClick={() => notice("판 제보는 백엔드 연결 후 열립니다 · Edition submissions open once the API is connected.")} className="label flex aspect-[2/3] w-[5.5rem] items-center justify-center border border-ink/30 text-center text-[10px] text-ink/70 hover:border-ink md:w-[6.75rem]">＋<br />Add an<br />edition</button>
+            </Group>
+          </>
+        )}
+        <span aria-hidden="true" className="w-px self-stretch bg-ink/20" />
+        <Group title="This edition · 같은 판의 표지">
+          <div className="flex flex-wrap items-center gap-2 pb-6">
+            <span className={`${chip} ${sel.cover ? "bg-ink text-museum" : "border border-dashed border-ink/40 text-ink/60"}`}>Front{sel.cover ? "" : " — none"}</span>
+            <span className={`${chip} border border-dashed border-ink/40 text-ink/60`}>Back — none</span>
+            <span className={`${chip} border border-dashed border-ink/40 text-ink/60`}>띠지 — none</span>
+            <span className={`${chip} border border-dashed border-ink/40 text-ink/60`}>Recover — none</span>
+          </div>
+        </Group>
+        <span aria-hidden="true" className="w-px self-stretch bg-ink/20" />
+        <Group title="Redesigns · 리디자인 (0)">
+          <button type="button" onClick={() => notice("리디자인 업로드는 백엔드 연결 후 열립니다 · Redesign uploads open once the API is connected.")} className="label flex aspect-[2/3] w-[5.5rem] items-center justify-center border border-ink/30 text-center text-[10px] text-ink/70 hover:border-ink md:w-[6.75rem]">＋<br />Upload a<br />redesign</button>
+        </Group>
+      </div>
+    </div>
+  );
+}
