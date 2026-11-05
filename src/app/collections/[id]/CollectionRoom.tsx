@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LayoutGroup, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { ARTWORKS, BY_ID } from "@/lib/artworks";
+import { ARTWORKS, BY_ID } from "@/lib/mockData";
 import { actions, useStore } from "@/lib/store";
 import { CollectionGallery, type CollectionView } from "@/components/CollectionGallery";
 import { AuroraBackground } from "@/components/AuroraBackground";

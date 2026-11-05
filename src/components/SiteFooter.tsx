@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ARTWORKS, YEARS } from "@/lib/artworks";
+import { ARTWORKS, YEARS } from "@/lib/mockData";
 import { USE_API } from "@/lib/api/config";
 
 export function SiteFooter() {

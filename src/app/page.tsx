@@ -1,4 +1,5 @@
-import { ARTWORKS, type Artwork } from "@/lib/artworks";
+import { type Artwork } from "@/lib/artworks";
+import { ARTWORKS } from "@/lib/mockData";
 import { USE_API } from "@/lib/api/config";
 import { loadLatestWorks } from "@/lib/api/works";
 import { CatalogProvider } from "@/lib/catalog";

@@ -25,7 +25,8 @@
   --color-cyan: #8edfea;
   --color-lime: #dfff78;
 
-  /* Type */
+  /* Type — Pretendard comes from its dynamic-subset stylesheet (layout.tsx) */
+  --font-pretendard: "Pretendard Variable";
   --font-grotesk: var(--font-space-grotesk), var(--font-pretendard), system-ui, sans-serif;
   --font-serif: var(--font-instrument-serif), var(--font-pretendard), Georgia, serif;
   --font-kr: var(--font-pretendard), var(--font-space-grotesk), system-ui, sans-serif;

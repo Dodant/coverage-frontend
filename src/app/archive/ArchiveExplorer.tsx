@@ -3,7 +3,8 @@
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ARTWORKS, FAMILIES, GENRES, type ColorFamily, type Genre } from "@/lib/artworks";
+import { FAMILIES, GENRES, type ColorFamily, type Genre } from "@/lib/artworks";
+import { ARTWORKS } from "@/lib/mockData";
 import { useStore } from "@/lib/store";
 import { ArchiveFilters, DEFAULT_FILTERS, SortAndDensity, type FilterState } from "@/components/ArchiveFilters";
 import { ArtworkGrid } from "@/components/ArtworkGrid";

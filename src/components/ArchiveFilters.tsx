@@ -1,6 +1,7 @@
 "use client";
 
-import { FAMILIES, GENRES, COUNTRIES, IMPRINTS, YEARS, EDITION_LANGS, LANG_LABEL, type ColorFamily, type Genre } from "@/lib/artworks";
+import { FAMILIES, GENRES, LANG_LABEL, type ColorFamily, type Genre } from "@/lib/artworks";
+import { COUNTRIES, IMPRINTS, YEARS, EDITION_LANGS } from "@/lib/mockData";
 
 export type Sort = "newest" | "oldest" | "title" | "hue" | "light" | "chroma";
 export type Density = "compact" | "regular" | "large";

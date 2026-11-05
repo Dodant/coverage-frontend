@@ -1,5 +1,3 @@
-import data from "@/data/artworks.json";
-
 export type Genre =
   | "fiction" | "poetry" | "children" | "picture" | "ya" | "nonfiction"
   | "essay" | "criticism" | "comics" | "periodical";
@@ -90,13 +88,6 @@ export interface Artwork {
   ratioUnknown?: boolean;
 }
 
-export const ARTWORKS = data as Artwork[];
-export const BY_ID = new Map(ARTWORKS.map((a) => [a.id, a]));
-export const getArtwork = (id: string) => BY_ID.get(id);
-export const indexOf = (id: string) => ARTWORKS.findIndex((a) => a.id === id);
-/** Catalogue number — stable, museum-style. */
-export const catNo = (a: Artwork) => `CVG–${String(indexOf(a.id) + 1).padStart(4, "0")}`;
-
 export const src = (a: Artwork, size: 640 | 1400 = 640) =>
   a.remote ? (size === 1400 ? a.remote.full ?? a.remote.thumb : a.remote.thumb ?? a.remote.full) ?? "" : `${a.img}-${size}.webp`;
 export const srcSet = (a: Artwork) =>
@@ -139,10 +130,6 @@ export const FAMILIES: { id: ColorFamily; en: string; kr: string; swatch: string
   { id: "dark", en: "Ink", kr: "먹색", swatch: "#2a2830" },
 ];
 
-export const IMPRINTS = [...new Set(ARTWORKS.map((a) => a.imprint))];
-export const YEARS = [...new Set(ARTWORKS.map((a) => a.year).filter(Boolean) as number[])].sort();
-export const COUNTRIES = [...new Set(ARTWORKS.map((a) => a.country).filter(Boolean) as string[])];
-
 export const auroraVars = (a: Artwork) => ({
   "--a1": a.aurora[0],
   "--a2": a.aurora[1],
@@ -172,16 +159,6 @@ export function pick<T>(list: T[], n: number, seed: number) {
   return a.slice(0, n);
 }
 
-export const related = (a: Artwork, n = 8) => {
-  const score = (b: Artwork) =>
-    (b.series && b.series === a.series ? 5 : 0) +
-    (b.genre === a.genre ? 2 : 0) +
-    (b.family === a.family ? 2 : 0) +
-    (Math.abs((b.year ?? 0) - (a.year ?? 0)) <= 1 ? 1 : 0) -
-    Math.min(Math.abs(b.hue - a.hue), 360 - Math.abs(b.hue - a.hue)) / 120;
-  return ARTWORKS.filter((b) => b.id !== a.id).sort((x, y) => score(y) - score(x)).slice(0, n);
-};
-
 export const fmtDate = (a: Artwork) => (a.year ? `${a.year}${a.month ? "." + String(a.month).padStart(2, "0") : ""}` : "—");
 
 export const LANG_LABEL: Record<string, { en: string; kr: string }> = {
@@ -189,7 +166,6 @@ export const LANG_LABEL: Record<string, { en: string; kr: string }> = {
   FR: { en: "French", kr: "프랑스어" }, DE: { en: "German", kr: "독일어" }, JA: { en: "Japanese", kr: "일본어" },
   IT: { en: "Italian", kr: "이탈리아어" }, LZH: { en: "Classical Chinese", kr: "한문" },
 };
-export const EDITION_LANGS = [...new Set(ARTWORKS.flatMap((a) => a.editions.map((e) => e.lang)).filter(Boolean) as string[])];
 export const archivedCount = (a: Artwork) => a.editions.filter((e) => e.cover).length;
 export const editionLangs = (a: Artwork) => [...new Set(a.editions.map((e) => e.lang ?? "?"))];
 /** Trim size in mm parsed from e.g. "122×188mm"; null when unknown or non-numeric (신국판 …). */

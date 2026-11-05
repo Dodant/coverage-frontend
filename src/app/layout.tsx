@@ -3,6 +3,9 @@ import localFont from "next/font/local";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { FilmGrainOverlay, GRAIN_URL_WHITE, GRAIN_URL_WHITE_B } from "@/components/FilmGrainOverlay";
+// Pretendard ships as one 2 MB variable font; its dynamic subset splits it by unicode-range so a page fetches
+// only the Hangul/Latin slices it actually draws.
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 
 // Fonts are self-hosted from npm (@fontsource / pretendard) so builds never depend on network access.
@@ -23,12 +26,6 @@ const mono = localFont({
     { path: "../../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2", weight: "500" },
   ],
   variable: "--font-plex-mono", display: "swap",
-});
-const pretendard = localFont({
-  src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
-  variable: "--font-pretendard",
-  weight: "45 920",
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -53,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="ko"
       suppressHydrationWarning
-      className={`${grotesk.variable} ${serif.variable} ${mono.variable} ${pretendard.variable}`}
+      className={`${grotesk.variable} ${serif.variable} ${mono.variable}`}
       style={{ "--grain-white": GRAIN_URL_WHITE, "--grain-white-b": GRAIN_URL_WHITE_B } as React.CSSProperties}
     >
       <head>

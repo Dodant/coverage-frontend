@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { ARTWORKS, BY_ID } from "@/lib/artworks";
+import { ARTWORKS, BY_ID } from "@/lib/mockData";
 import { actions, useStore } from "@/lib/store";
 import { CollectionFan } from "@/components/CollectionGallery";
 import { ArtworkGrid } from "@/components/ArtworkGrid";

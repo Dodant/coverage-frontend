@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ARTWORKS, catNo, getArtwork, indexOf, related } from "@/lib/artworks";
+import { ARTWORKS, catNo, getArtwork, indexOf, related } from "@/lib/mockData";
 import { USE_API } from "@/lib/api/config";
 import { loadRelated, loadWork } from "@/lib/api/works";
 import { ArtworkViewer } from "@/components/ArtworkViewer";

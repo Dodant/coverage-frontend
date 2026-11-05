@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { BY_ID, pick, type Artwork } from "@/lib/artworks";
+import { pick, type Artwork } from "@/lib/artworks";
 import { useCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { ArtworkImage } from "../ArtworkImage";
@@ -38,6 +38,7 @@ function Fan({ works }: { works: Artwork[] }) {
 export function PrivateExhibitions() {
   const { collections, favorites } = useStore();
   const { works: ARTWORKS, live } = useCatalog();
+  const byId = useMemo(() => new Map(ARTWORKS.map((a) => [a.id, a])), [ARTWORKS]);
   const samples = useMemo(
     () => [
       { name: "Blue Hours", kr: "푸른 시간", works: ARTWORKS.filter((a) => a.family === "blue").slice(0, 4) },
@@ -46,7 +47,7 @@ export function PrivateExhibitions() {
     ],
     [ARTWORKS],
   );
-  const mine = live ? [] : collections.filter((c) => c.ids.length).slice(0, 3).map((c) => ({ name: c.name, kr: `${c.ids.length} works`, works: c.ids.map((id) => BY_ID.get(id)!).filter(Boolean), id: c.id }));
+  const mine = live ? [] : collections.filter((c) => c.ids.length).slice(0, 3).map((c) => ({ name: c.name, kr: `${c.ids.length} works`, works: c.ids.map((id) => byId.get(id)!).filter(Boolean), id: c.id }));
   const usable = samples.filter((x) => x.works.length >= 2);
   const fallback = usable.length ? usable : [{ name: "Just Arrived", kr: "새로 들어온 표지", works: ARTWORKS.slice(0, 4) }];
   const shown = mine.length ? mine : fallback;
