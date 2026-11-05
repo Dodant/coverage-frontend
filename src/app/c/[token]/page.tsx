@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { USE_API } from "@/lib/api/config";
 import { ApiError } from "@/lib/api/client";
 import { isUuid } from "@/lib/api/adapt";
 import { getSharedCollection } from "@/lib/api/endpoints";
 import { SharedRoom } from "./SharedRoom";
 
-async function load(token: string) {
+// One backend call per request, shared by the metadata and the page.
+const load = cache(async (token: string) => {
   if (!USE_API || !isUuid(token)) return null;
   try { return await getSharedCollection(token); } catch (e) { if (e instanceof ApiError && (e.isNotFound || e.status === 400)) return null; throw e; }
-}
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
   const c = await load((await params).token).catch(() => null);

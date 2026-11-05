@@ -69,7 +69,8 @@ export const myCollections = (page = 0, size = 100) =>
 export const publicCollections = (page = 0, size = 12, revalidate?: number) =>
   api<SpringPage<CollectionSummaryResponse>>("/collections/public", { query: { page, size, sort: "createdAt,desc" }, auth: "none", revalidate });
 export const getCollection = (id: string) => api<CollectionResponse>(`/collections/${enc(id)}`, { auth: "required" });
-export const getSharedCollection = (token: string) => api<CollectionResponse>(`/collections/shared/${enc(token)}`, { auth: "none", revalidate: 30 });
+// Never cached: once the owner makes the room private, the link must close on the next request.
+export const getSharedCollection = (token: string) => api<CollectionResponse>(`/collections/shared/${enc(token)}`, { auth: "none", revalidate: false });
 export const createCollection = (name: string, description?: string, visibility: CollectionVisibility = "PRIVATE") =>
   api<CollectionResponse>("/collections", { method: "POST", body: { name, description, visibility }, auth: "required" });
 export const updateCollection = (id: string, body: { name?: string; description?: string; visibility?: CollectionVisibility }) =>

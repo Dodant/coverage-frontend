@@ -14,6 +14,18 @@ const nextConfig: NextConfig = {
     config.watchOptions = { ...config.watchOptions, ignored: ["**/.git/**", "**/.next*/**", "**/node_modules/**", "**/.playwright-mcp/**"] };
     return config;
   },
+  // Signed-in actions (like, visibility, remove) must not be operable from a page that frames this one.
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [
+        { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      ],
+    }];
+  },
   async rewrites() {
     // Forward /api to coverage-backend (it has no CORS config). The target is fixed at `next build`
     // (rewrites live in the routes manifest), and a trailing slash would double the "/".
