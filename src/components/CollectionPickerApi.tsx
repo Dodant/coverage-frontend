@@ -15,6 +15,7 @@ import { EASE_OUT } from "./motion";
 export function CollectionPickerApi({ art, className = "" }: { art: Artwork; className?: string }) {
   const router = useRouter();
   const session = useSession();
+  const uid = session?.user.id;
   const r = art.remote!;
   const itemType: CollectionItemType = r.kind === "ORIGINAL" ? "ORIGINAL_COVER" : "TRANSLATED_COVER";
   const [open, setOpen] = useState(false);
@@ -26,7 +27,7 @@ export function CollectionPickerApi({ art, className = "" }: { art: Artwork; cla
   const note = (t: string) => { setFlash(t); window.setTimeout(() => setFlash(null), 1800); };
 
   useEffect(() => {
-    if (!open || !session || !r.coverId) return;
+    if (!open || !uid || !r.coverId) return;
     let alive = true;
     (async () => {
       try {
@@ -37,7 +38,7 @@ export function CollectionPickerApi({ art, className = "" }: { art: Artwork; cla
       } catch { if (alive) setRows([]); }
     })();
     return () => { alive = false; };
-  }, [open, session, r.coverId]);
+  }, [open, uid, r.coverId]); // a token refresh is not a reason to re-read every room
 
   useEffect(() => {
     if (!open) return;

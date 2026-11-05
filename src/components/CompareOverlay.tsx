@@ -44,7 +44,7 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
         </div>
       </div>
       {/* The row centres itself with auto margins, which drop to 0 when it overflows — so the first edition stays reachable. */}
-      <div className="wrap mt-10 flex w-full flex-1 items-end overflow-x-auto pb-4">
+      <div tabIndex={0} aria-label="Editions, scroll sideways" className="wrap mt-10 flex w-full flex-1 items-end overflow-x-auto pb-4">
         <div className="mx-auto flex w-max items-end gap-[clamp(1rem,4vw,3.5rem)]">
         {a.editions.map((e, i) => {
           const mm = known[i];

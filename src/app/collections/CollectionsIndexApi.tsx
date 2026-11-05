@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CollectionFan } from "@/components/CollectionGallery";
 import { EditorialHeading } from "@/components/EditorialHeading";
 import { AuroraBackground } from "@/components/AuroraBackground";
@@ -45,10 +45,13 @@ export function CollectionsIndexApi() {
   const [confirm, setConfirm] = useState<string | null>(null);
   useEffect(() => setHydrated(true), []);
 
+  const uid = session?.user.id;
+  const req = useRef(0);
   const reload = useCallback(() => {
-    if (!session) { setMine([]); return; }
-    allMyCollections().then(setMine).catch((e) => { setMine([]); setError(msg(e)); });
-  }, [session]);
+    const n = ++req.current; // only the latest load may write: an older, slower one must not drop a room just made
+    if (!uid) { setMine([]); return; }
+    allMyCollections().then((r) => { if (n === req.current) setMine(r); }).catch((e) => { if (n === req.current) { setMine([]); setError(msg(e)); } });
+  }, [uid]);
   useEffect(() => { if (hydrated) reload(); }, [hydrated, reload]);
   const loadOpen = useCallback(() => {
     setOpenError(false); setOpen(null);
