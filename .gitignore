@@ -8,3 +8,6 @@ next-env.d.ts
 
 # Cover images are press-kit artwork (rights held by Changbi); kept out of git, generated locally
 public/covers/
+
+# Browser-automation screenshots and snapshots
+.playwright-mcp/

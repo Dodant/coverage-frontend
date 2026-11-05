@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   // Covers are pre-sized WebP files in /public/covers (see scripts/build-data.mjs),
   // so the runtime image optimizer is not needed.
   images: { unoptimized: true },
+  // Browser-automation output (Playwright MCP) lands in .playwright-mcp; its console log grows on every
+  // Fast Refresh message, which would otherwise retrigger the watcher in a loop.
+  webpack(config) {
+    config.watchOptions = { ...config.watchOptions, ignored: ["**/.git/**", "**/.next/**", "**/node_modules/**", "**/.playwright-mcp/**"] };
+    return config;
+  },
   async rewrites() {
     // Forward /api to coverage-backend in development (the backend has no CORS config).
     const api = process.env.COVERAGE_API_ORIGIN;
