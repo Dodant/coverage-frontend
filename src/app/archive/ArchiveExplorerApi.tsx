@@ -3,8 +3,9 @@
 import { useSearchParams } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { Artwork } from "@/lib/artworks";
-import { browseBy, browseLatest, getTranslated, search } from "@/lib/api/endpoints";
-import { fromHit } from "@/lib/api/adapt";
+import { browseBy, browseLatest, search } from "@/lib/api/endpoints";
+import { fetchWork } from "@/lib/api/useWork";
+import { fromHit, routeId } from "@/lib/api/adapt";
 import { ApiError } from "@/lib/api/client";
 import type { SortOption } from "@/lib/api/types";
 import { ArtworkGrid, ROW } from "@/components/ArtworkGrid";
@@ -29,12 +30,9 @@ const SORTS: { id: SortOption; label: string }[] = [
  * when its original isn't already on the page (search hits are per book, and the archive's own
  * cover is often a translation). Every-cover mode shows originals and translations separately.
  */
-const originOf = new Map<string, Promise<string | null>>();
-const originalIdOf = (translatedUuid: string) => {
-  let p = originOf.get(translatedUuid);
-  if (!p) { p = getTranslated(translatedUuid, 600).then((t) => t.originalBookId).catch(() => null); originOf.set(translatedUuid, p); }
-  return p;
-};
+// A translated hit's original, read from the full work that works mode loads anyway (one request per book, shared).
+const originalIdOf = (translatedUuid: string) =>
+  fetchWork(routeId("TRANSLATED", translatedUuid)).then((w) => w?.editions.find((e) => e.bookKind === "ORIGINAL")?.bookId ?? null, () => null);
 
 export function ArchiveExplorerApi() {
   const params = useSearchParams();
@@ -119,11 +117,9 @@ export function ArchiveExplorerApi() {
   useEffect(() => {
     if (unit !== "works") return;
     let live = true;
-    for (const a of items) {
-      const r = a.remote;
-      if (r?.kind !== "TRANSLATED" || r.bookId in origins) continue;
-      originalIdOf(r.bookId).then((o) => live && setOrigins((m) => ({ ...m, [r.bookId]: o })));
-    }
+    const ids = [...new Set(items.flatMap((a) => (a.remote?.kind === "TRANSLATED" && !(a.remote.bookId in origins) ? [a.remote.bookId] : [])))];
+    // One state update per page of hits, not one per hit.
+    if (ids.length) Promise.all(ids.map(async (id) => [id, await originalIdOf(id)] as const)).then((r) => live && setOrigins((m) => ({ ...m, ...Object.fromEntries(r) })));
     return () => { live = false; };
   }, [items, unit]); // eslint-disable-line react-hooks/exhaustive-deps
 

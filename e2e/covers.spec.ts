@@ -65,3 +65,15 @@ test("artwork: Compare keeps the first edition reachable when the row overflows,
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();
 });
+
+test("archive: a translated hit is fetched once while works are expanded", async ({ page }) => {
+  const urls: string[] = [];
+  page.on("request", (r) => { if (/\/api\/books\/translated\/[0-9a-f-]+$/.test(r.url())) urls.push(r.url()); });
+  await page.goto("/archive");
+  await page.getByRole("searchbox").fill(WORK);
+  const card = page.locator("figure.art-hover", { has: page.locator(`img[alt^="${WORK}"]`) }).first();
+  await expect(card).toContainText(/\d+ editions/);
+  await page.waitForLoadState("networkidle");
+  expect(urls.length).toBeGreaterThan(0);
+  expect(new Set(urls).size, `duplicate requests: ${urls.join(", ")}`).toBe(urls.length);
+});
