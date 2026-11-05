@@ -25,6 +25,8 @@ test("archive: hovering a work deals its editions out at the card's height", asy
   await page.getByRole("searchbox").fill(WORK);
   const card = page.locator("figure.art-hover", { has: page.locator(`img[alt^="${WORK}"]`) }).first();
   await expect(card).toBeVisible();
+  // A search hit is a single cover until the work (original + translations) has loaded; only then does hovering fan it out.
+  await expect(card).toContainText(/\d+ editions/);
   await card.hover();
   const fan = page.getByRole("dialog", { name: /editions$/ });
   await expect(fan).toBeVisible();
