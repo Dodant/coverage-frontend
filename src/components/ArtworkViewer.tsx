@@ -257,7 +257,7 @@ export function ArtworkViewer({ a, prev = null, next = null, related, no }: Prop
         <p className="kr col-span-12 text-[clamp(1.15rem,1.8vw,1.6rem)] leading-[1.6] tracking-[-0.01em] md:col-span-7">{note}</p>
       </section>
 
-      <section aria-labelledby="related-title" className="wrap pb-[var(--section-y)]">
+      {(related.length > 0 || (prev && next)) && <section aria-labelledby="related-title" className="wrap pb-[var(--section-y)]">
         <div className="flex items-end justify-between border-t border-ink pt-4">
           <h2 id="related-title" className="display text-[length:var(--fs-h2)]">In conversation</h2>
           <p className="label text-ash">Related by series, genre & hue</p>
@@ -279,7 +279,7 @@ export function ArtworkViewer({ a, prev = null, next = null, related, no }: Prop
             </Link>
           ))}
         </nav>}
-      </section>
+      </section>}
 
       <AnimatePresence>{inspect && view && <InspectOverlay a={view} onClose={() => setInspect(false)} />}</AnimatePresence>
       <AnimatePresence>{compare && <CompareOverlay a={a} onClose={() => setCompare(false)} />}</AnimatePresence>

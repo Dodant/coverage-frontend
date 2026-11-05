@@ -104,7 +104,7 @@ export function ArtworkCard({ a: light, sizes, priority, caption = "hover", save
             <span className="label shrink-0 text-ash">{index ?? a.year}</span>
           </figcaption>
         )}
-        <span className="sr-only">{`${a.credit}, ${a.imprint} ${a.year ?? ""}, ${GENRES[a.genre].kr}${stacked ? `, ${n} editions, ${archivedCount(a)} cover archived` : ""}`}</span>
+        <span className="sr-only">{[a.credit, `${a.imprint} ${a.year ?? ""}`.trim(), GENRES[a.genre].kr, stacked ? `${n} editions, ${archivedCount(a)} cover archived` : ""].filter((s) => s && s !== "—").join(", ")}</span>
       </Link>
       {stack && (
         <span className="label mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px]">

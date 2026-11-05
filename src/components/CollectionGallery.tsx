@@ -94,7 +94,7 @@ export function CollectionGallery({ works, view, onRemove, onMove }: Props) {
               <span className="label text-ash">{String(i + 1).padStart(2, "0")}</span>
               <div>
                 <p className="kr font-semibold">{a.title}</p>
-                <p className="kr text-ash">{a.credit} · {a.year}</p>
+                <p className="kr text-ash">{[a.credit, a.year].filter(Boolean).join(" · ")}</p>
               </div>
             </div>
             <Controls a={a} i={i} n={works.length} onRemove={onRemove} onMove={onMove} />
