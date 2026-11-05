@@ -43,6 +43,16 @@ Fields such as dominant colour, colour family and aurora palette are computed. O
 
 **Rights:** these are real Changbi covers. Confirm display permission with Changbi before any public deployment.
 
+## Checks
+
+```bash
+npx tsc --noEmit   # types
+npm run lint       # ESLint: next/core-web-vitals + next/typescript (eslint.config.mjs)
+npm run e2e        # Playwright; first time: npx playwright install chromium
+```
+
+`e2e/` runs the app in API mode against `scripts/mock-api.mjs`, on its own ports (web 3100, API 4110) and `.next-e2e`, so a running `npm run dev` is not disturbed. It checks the design rules (no cover is stretched or cropped, grid rows / editions fan / Compare hang at one height) and the live flows (signup field errors, like, new exhibition → link-only → anonymous share page, 401 → refresh → retry).
+
 ## Live data (coverage-backend)
 
 Two data sources, picked at build time:
