@@ -20,13 +20,13 @@ npm run data           # data/changbi-meta.json → src/data/artworks.json
 npm run covers         # ../changbi-press/covers 원본 → public/covers/{id}-640/-1400.webp (있는 건 건너뜀, --force 로 전부 재생성)
 npx tsc --noEmit       # 타입 검사
 npm run lint           # ESLint (next/core-web-vitals + typescript). 경고 0 유지
-npm run e2e            # Playwright E2E. mock-api(:4110)와 API 모드 dev 서버(:3100, .next-e2e)를 스스로 띄움. 최초 1회 npx playwright install chromium
+npm run e2e            # Playwright E2E. mock-api(:4110)와 API 모드 dev 서버(:3100, .next-e2e)를 스스로 띄움. public/covers 필요(npm run covers), 최초 1회 npx playwright install chromium
 ```
 - tsc가 `.next/types`·`.next-e2e/types` 관련 에러를 내면 소스 문제가 아님. `next-env.d.ts`는 마지막에 돌린 `next dev`/`build`/`e2e`의 distDir를 가리키므로, 해당 폴더를 지웠다면 `npm run dev`를 한 번 띄우거나 `rm -rf .next/types` 후 재실행.
 
 ## 테스트
 - `e2e/`는 API 모드 + `scripts/mock-api.mjs` 기준(목업 데이터 모드와 같은 컴포넌트 + 로그인·좋아요·전시). 포트와 `distDir`가 따로라 `npm run dev`를 켜 둔 채 돌려도 됨
-- 다루는 것: 표지 비율 왜곡 0(`img.art`의 offset 크기 vs natural 크기), 그리드 행·팬·비교의 높이 통일, 가입 검증 `details` 표시, 좋아요, 전시 생성·링크 공개·익명 공유, 잘못된 액세스 토큰 → 갱신 → 재시도
+- 다루는 것: 표지 비율 왜곡 0(`img.art`의 offset 크기 vs natural 크기), 그리드 행·팬·비교의 높이 통일, 가입 검증 `details` 표시, 좋아요, 전시 생성·링크 공개·익명 공유, 잘못된 액세스 토큰 → 갱신 → 재시도, UUID가 아닌 라우트 id → 404
 - 셀렉터는 role·label·aria-label 기준. 새 UI에 테스트가 붙을 수 있게 접근성 이름을 유지할 것
 
 ## 스택
@@ -42,7 +42,7 @@ Next.js 15.5 App Router · React 19 · TypeScript · Tailwind CSS 4 (`@theme` �
 - 라우트 id: API 모드는 `o-<uuid>`(원서) / `t-<uuid>`(번역서) — `routeId`/`parseRouteId`. 컬렉션 항목은 `c-<coverId>`
 - `session.ts`: 토큰은 localStorage `coverage:session`. 리프레시 토큰은 1회용이라 갱신은 반드시 `refreshOnce()`(single-flight)로만
 - `client.ts`: `api()`가 Bearer 부착, 401이면 한 번 갱신 후 재시도. 백엔드는 대부분의 실패(틀린 비밀번호, 소유자 아님, 비공개)를 **400**으로 줌
-- `useWork.ts`: 검색 히트(가벼운 Artwork)를 호버 시 전체 작품(원서+번역서)으로 로드, 동시성 6
+- `useWork.ts`: 검색 히트(가벼운 Artwork)를 작품별 보기 카드가 마운트될 때 전체 작품(원서+번역서)으로 확장, 동시성 6
 - 작품(work) = 원서 + 번역서. 백엔드에 Work 엔드포인트가 없음
 - 공개 컬렉션 열람: `GET /collections/{id}`는 PUBLIC이어도 로그인 필요, 익명은 `/c/[token]`(shared)만 가능
 

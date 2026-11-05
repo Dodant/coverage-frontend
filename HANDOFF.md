@@ -10,6 +10,7 @@
   - `9b6666b` 표지 파일이 없을 때 빈 액자 표시 · `e2b18a1` 빈 캡션·섹션 정리 · `68e366a` watcher `.playwright-mcp/` 제외 · HANDOFF 갱신 — 아래 "2026-11-04 세션에서 한 것" 참고. `npx tsc --noEmit` 통과, `next build` API/mock 두 모드 통과
   - 2026-11-05: 표지 이미지 생성 스크립트(`npm run covers`) — 아래 "2026-11-05 세션" 참고
   - 2026-11-05: ESLint + Playwright E2E 세팅, `changbi-press` 압축 파일 정리 반영
+  - 2026-11-05: 브랜치 push, PR #1(https://github.com/Dodant/coverage-frontend/pull/1). 보안 리뷰 반영 — `5b0552f` URL 유래 값 차단(`safeNext`·API 경로 세그먼트 인코딩·UUID 검증→404), `39361a4`·`b6143fd` `safeNext`를 URL 해석으로, `9218a10` 팬 테스트 경합 수정. `/review` 결과는 아래 "2026-11-05 리뷰" 참고
 - 구현된 페이지: `/`, `/archive`, `/artwork/[id]`, `/collections`, `/collections/[id]`, `/c/[token]`, `/login`, `/signup`, `/account`
 - **실제 백엔드로 검증 완료 (2026-11-04)** — `coverage-backend` `docker compose up -d` + `./gradlew bootRun`, 프론트 `COVERAGE_API_ORIGIN=http://localhost:8080 NEXT_PUBLIC_DATA_SOURCE=api npm run dev`
   - 응답 형태는 `docs/API_CONTRACT.md`·`scripts/mock-api.mjs`와 일치. `adapt.ts`/`endpoints.ts` 수정 불필요
@@ -17,7 +18,7 @@
   - 브라우저(Playwright)에서 홈·아카이브·검색·작품·전시·공유·계정 확인, 표지 비율 왜곡 0건
 
 ## 2026-11-05 세션에서 한 것
-- ESLint: `eslint.config.mjs`(FlatCompat로 `next/core-web-vitals` + `next/typescript`), `npm run lint` = `eslint .`, 기준 경고 0. Playwright: `playwright.config.ts`(mock-api :4110 + API 모드 dev :3100, `distDir` `.next-e2e`), `e2e/{helpers,covers.spec,auth.spec}.ts` 7건 통과(약 20초 + 서버 기동). `next.config.ts`에 `distDir: process.env.NEXT_DIST_DIR`
+- ESLint: `eslint.config.mjs`(FlatCompat로 `next/core-web-vitals` + `next/typescript`), `npm run lint` = `eslint .`, 기준 경고 0. Playwright: `playwright.config.ts`(mock-api :4110 + API 모드 dev :3100, `distDir` `.next-e2e`), `e2e/{helpers,covers.spec,auth.spec,routes.spec}.ts` 10건 통과(약 20초 + 서버 기동; `public/covers`가 있어야 함). `next.config.ts`에 `distDir: process.env.NEXT_DIST_DIR`
 - `../changbi-press/` 전송용 압축 5개 삭제(사용자 확인). 표지는 `npm run covers`로 재생성
 - `scripts/build-covers.mjs` + `npm run covers` + devDependency `sharp`: `../changbi-press/covers` 원본 → `public/covers/{id}-640/-1400.webp`. 271건 전부 원본과 width×height 일치 확인(모호한 후보 3건도 치수로 구분됨). 기존 tar 세트와 비교: 파일 목록 동일, 치수 동일(1px 반올림 2건), CMYK 14건은 ICC 변환이라 색이 약간 다름(깨짐 없음). CLAUDE.md·README 갱신
 
@@ -42,9 +43,15 @@
    - Work(작품) 엔드포인트(현재 작품별 보기는 히트마다 2~3회 호출), 검색 facet 집계(항상 빈 값), CORS
    - 개발 DB smoke 잔재 정리 + 삭제 책 reindex (위 참고)
 2. 공개 배포 전 창비 표지 사용 권한 확인
-3. (선택) CI: `npm run lint && npx tsc --noEmit && npm run e2e`를 GitHub Actions로
+3. (선택) CI: `npm run lint && npx tsc --noEmit`을 GitHub Actions로. `npm run e2e`는 `public/covers`(창비 이미지, git 밖)가 있어야 돌아가므로 권한 확인 전에는 CI에 넣지 말 것
 
 ## 참고
 - 디자인 캔버스(Claude artifact, Design type): https://claude.ai/code/artifact/20e87c3f-a17c-4649-a741-2016b5b69f76
 - 백엔드 계약서: `docs/API_CONTRACT.md` — 백엔드 소스 기준 2026-11-04 도출, 실서버로 2026-11-04 검증. 백엔드가 바뀌면 갱신 필요
 - 브라우저 검증 시 Playwright MCP 산출물은 `.playwright-mcp/`(gitignore, watcher 제외)
+
+## 2026-11-05 리뷰 (`/review`, PR #1 기준 b6143fd)
+- 자동 수정 68건 + 문서 10건이 **커밋 전 작업 트리**에 있음(세션 JSON 검증, 목업 API 계약 불일치 4건, `?by=` 검증·URL 동기화, 전시실 fetch alive 가드·더블클릭 방지, 좋아요 경합, "Nonfiction"→fiction·언어 표기 오류, 로그인 뒤 /login 재진입 방지, 서버 fetch 10초 타임아웃, 죽은 코드·stale 문서 정리 등). tsc·lint·E2E 10건·mock 빌드 통과 확인 후 중단됨. `git diff`로 보고 논리 단위로 커밋할 것
+- 사용자가 승인했지만 **아직 안 한 수정**(리뷰어 발견 순, 자세한 근거는 리뷰 보고): 세션 5xx 유지·늦은 refresh 응답 무시·계정 전환 재로드·401 재시도(`session.ts`/`client.ts`/`AccountView`), 탭 간 refresh Web Locks, 보안 헤더 + `getSharedCollection` no-store, 전시실 높이 통일(`CollectionGallery` rowHeight, 팬 2곳, `EditionsFan` 측정 비율, `ArtworkCard` 하이드레이션 전 로드), Compare 오버플로 + Compare/Inspect 포커스 트랩·복귀, 서문 자동저장 덮어쓰기 제거 + 추가 시 선택 판본 기억, `EditionsRail` Item 호이스팅 + 번역 히트 중복 호출 제거, Pretendard 동적 서브셋, 목업 데이터 번들 분리, 목업 모드 E2E 프로젝트 + covers 사전조건, 컬렉션 100개 초과 페이지네이션
+- 그 수정들을 지키는 **테스트는 먼저 써 두었고** `.gstack/tmp/review-phase1-tests.patch`에 있음(`git apply`). 수정 전에는 의도적으로 빨간 테스트가 섞여 있으니 수정과 함께 적용할 것
+- Skip으로 기록: 판본 팬 Escape(window keydown) · reduced-motion MotionConfig · 홈 ISR 오류 캐시 · advisory 정리

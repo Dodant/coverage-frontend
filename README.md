@@ -30,7 +30,7 @@ Next.js 15.5 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Motion 
 ## Design system
 
 - Tokens: `src/app/globals.css` (`@theme` colours & fonts, fluid type scale, grain opacity, shadows, motion durations, registered `--a1…--a5` aurora colour properties so palettes interpolate).
-- `AuroraBackground` — composited radial "clouds" drifting on 22–35s cycles; colours come from CSS variables, so the viewing room re-tints by setting variables only (no filter repaints). Presets: `dawn`, `nocturne`, `lagoon`, `ember`, `reactive`.
+- `AuroraBackground` — SVG Bézier ribbon strokes softened once by `feGaussianBlur`, swaying slowly on 24–38s cycles and paused while off-screen; colours come from CSS variables, so the viewing room re-tints by setting variables only. Presets: `dawn`, `nocturne`, `lagoon`, `ember`, `reactive`.
 - `FilmGrainOverlay` — one static SVG `feTurbulence` tile shifted with a stepped transform. The page-wide layer sits **beneath** content; grain never touches archived artwork.
 - `EditorialHeading`, `AnimatedWordmark`, `ArtworkCard`, `ArtworkGrid`, `ArtworkViewer`, `ArchiveFilters`, `ExhibitionSection`, `CollectionGallery`, `Magnetic`, `SaveButton`, `CollectionPicker`, `InspectOverlay`.
 - Archive → viewing room uses the View Transitions API (`src/lib/transition.ts`) as a shared-element morph; falls back to normal navigation. `prefers-reduced-motion` disables ambient motion and transitions.
@@ -51,7 +51,7 @@ npm run lint       # ESLint: next/core-web-vitals + next/typescript (eslint.conf
 npm run e2e        # Playwright; first time: npx playwright install chromium
 ```
 
-`e2e/` runs the app in API mode against `scripts/mock-api.mjs`, on its own ports (web 3100, API 4110) and `.next-e2e`, so a running `npm run dev` is not disturbed. It checks the design rules (no cover is stretched or cropped, grid rows / editions fan / Compare hang at one height) and the live flows (signup field errors, like, new exhibition → link-only → anonymous share page, 401 → refresh → retry).
+`e2e/` runs the app in API mode against `scripts/mock-api.mjs`, on its own ports (web 3100, API 4110) and `.next-e2e`, so a running `npm run dev` is not disturbed. It checks the design rules (no cover is stretched or cropped, grid rows / editions fan / Compare hang at one height) and the live flows (signup field errors, off-site `next` ignored, like, new exhibition → link-only → anonymous share page, 401 → refresh → retry); route ids that are not UUIDs must 404. The suite needs the cover files in `public/covers` (`npm run covers`): the mock advertises them and every proportion check waits for a real image.
 
 ## Live data (coverage-backend)
 
@@ -71,7 +71,7 @@ npm run mock-api   # :4010 · demo@coverage.test / coverage123
 npm run dev:api    # = COVERAGE_API_ORIGIN=http://localhost:4010 NEXT_PUBLIC_DATA_SOURCE=api next dev
 ```
 
-`COVERAGE_API_ORIGIN` is read on the server too (SSR fetches go straight to `${origin}/api`), so set it for `next build` / `next start` as well. Contract: `docs/API_CONTRACT.md`; types: `src/lib/api/types.ts`.
+`COVERAGE_API_ORIGIN` is read on the server too (SSR fetches go straight to `${origin}/api`), so set it for `next build` / `next start` as well. The `/api` rewrite target is baked in at `next build`, so build and start with the same value. Contract: `docs/API_CONTRACT.md`; types: `src/lib/api/types.ts`.
 
 Code: `src/lib/api/` — `client.ts` (fetch wrapper, `ApiError`, one retry after 401), `session.ts` (tokens in `localStorage`, single-flight refresh — refresh tokens are single-use), `endpoints.ts`, `adapt.ts` (backend → `Artwork`/`Edition`), `works.ts` (server loaders), `useWork.ts` (client work cache for the hover fan), `collectionWorks.ts`, `coverIndex.ts`.
 
@@ -93,3 +93,4 @@ Code: `src/lib/api/` — `client.ts` (fetch wrapper, `ApiError`, one retry after
 - `POST /collections/{id}/duplicate` returns `items: []` — the UI navigates to the copy and re-fetches.
 - Search facets are always empty, so filter options are fixed lists.
 - **Deleted books linger in the search index** (the hit's detail call returns 404); the UI drops those hits. Hits can also point at cover files that no longer exist in storage — the UI keeps an empty frame at the cover's proportions instead of a broken image.
+- **Search/browse hits keep a taken-down cover's thumbnail** (the index ignores `cover.hidden`, contract gotcha 16). Works mode expands each hit to its book, whose hidden covers are nulled; every-cover mode and related cards show the hit as indexed.
