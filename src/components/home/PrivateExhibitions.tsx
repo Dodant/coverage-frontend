@@ -18,7 +18,8 @@ function Fan({ works }: { works: Artwork[] }) {
             key={a.id}
             className="absolute bottom-0 h-[88%] transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:[transform:translateX(var(--tx))_rotate(var(--r2))]"
             style={{
-              aspectRatio: `${a.w} / ${a.h}`,
+              // Unknown size (live data): the image's own proportions set the width at this height.
+              ...(a.ratioUnknown ? {} : { aspectRatio: `${a.w} / ${a.h}` }),
               transform: `translateX(${(i - mid) * 26}%) rotate(${(i - mid) * 5}deg)`,
               "--tx": `${(i - mid) * 44}%`,
               "--r2": `${(i - mid) * 8}deg`,
@@ -26,7 +27,7 @@ function Fan({ works }: { works: Artwork[] }) {
               transformOrigin: "50% 120%",
             } as React.CSSProperties}
           >
-            <ArtworkImage a={a} sizes="200px" />
+            <ArtworkImage a={a} sizes="200px" style={{ height: "100%", width: "auto" }} />
           </div>
         );
       })}

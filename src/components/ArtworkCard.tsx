@@ -31,11 +31,13 @@ export function ArtworkCard({ a: light, sizes, priority, caption = "hover", save
   // Live data: a search hit carries no size, colour or editions — expand it to the full work.
   const a = useWork(light, Boolean(stack && light.remote));
   const [ratio, setRatio] = useState<number | null>(a.ratioUnknown ? null : a.w / a.h);
-  useEffect(() => { if (!a.ratioUnknown) setRatio(a.w / a.h); }, [a.ratioUnknown, a.w, a.h]);
   const n = a.editions.length;
   const stacked = stack && n > 1;
   const router = useRouter();
   const ref = useRef<HTMLImageElement>(null);
+  useEffect(() => { if (!a.ratioUnknown) setRatio(a.w / a.h); }, [a.ratioUnknown, a.w, a.h]);
+  // An image that finished loading before hydration never fires onLoad — read its size from the DOM.
+  useEffect(() => { const i = ref.current; if (a.ratioUnknown && i?.complete && i.naturalWidth) setRatio(i.naturalWidth / i.naturalHeight); }, [a.ratioUnknown, a.remote?.coverId]);
   const href = a.href ?? `/artwork/${a.id}`;
 
   // Editions fan: opens after a short hover (so sweeping across the grid doesn't fire it), or by the chip.

@@ -39,7 +39,9 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
   type Item = { kind: "edition"; e: Edition } | { kind: "more"; n: number };
   const items: Item[] = [...shown.map((e) => ({ kind: "edition" as const, e })), ...(overflow ? [{ kind: "more" as const, n: overflow }] : [])];
 
-  const ratioOf = (e: Edition) => { const im = editionImage(a, e); return im ? (im.w && im.h ? im.w / im.h : PLACEHOLDER_RATIO) : PLACEHOLDER_RATIO; };
+  // Covers without a known size (live data) are measured as they load, so the layout follows what is drawn.
+  const [measured, setMeasured] = useState<Record<string, number>>({});
+  const ratioOf = (e: Edition) => { const im = editionImage(a, e); return im?.w && im?.h ? im.w / im.h : im ? measured[e.key] ?? PLACEHOLDER_RATIO : PLACEHOLDER_RATIO; };
   const widthOf = (it: Item) => height * (it.kind === "more" ? 0.36 : ratioOf(it.e));
   const natural = items.reduce((s, it) => s + widthOf(it), 0) + GAP * (items.length - 1);
   // `room` = space from the card's anchored edge to the viewport edge on the dealing side.
@@ -116,7 +118,7 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
                     {im ? (
                       // Height fixed, width from the image's own proportions — never stretched.
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={im.url} alt="" onError={() => setMissing((s) => new Set(s).add(it.e.key))} className="block max-w-none shadow-[0_6px_14px_-6px_rgb(0_0_0/0.35)]" style={{ height, width: "auto" }} />
+                      <img src={im.url} alt="" onError={() => setMissing((s) => new Set(s).add(it.e.key))} onLoad={(ev) => { const i = ev.currentTarget, k = it.e.key; if (!(im.w && im.h) && i.naturalWidth) setMeasured((m) => (m[k] ? m : { ...m, [k]: i.naturalWidth / i.naturalHeight })); }} className="block max-w-none shadow-[0_6px_14px_-6px_rgb(0_0_0/0.35)]" style={{ height, width: "auto" }} />
                     ) : (
                       <div className="bg-museum shadow-[0_6px_14px_-6px_rgb(0_0_0/0.25)]">
                         <EditionPlaceholder e={it.e} workTitle={a.title} size="sm" style={{ height }} />

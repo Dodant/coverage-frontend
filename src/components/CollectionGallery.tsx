@@ -16,9 +16,9 @@ type Props = {
   onMove?: (id: string, dir: -1 | 1) => void;
 };
 
-// Every view hangs covers at one shared height; only widths differ, following each cover.
+// Every view hangs covers at one shared height; only widths differ, following each cover. ArtworkCard draws
+// each cover at that height (measuring the image when the API has no size); each item is as wide as its cover.
 const H = { wall: "clamp(13rem, 25vw, 23rem)", shelf: "clamp(9rem, 14vw, 13rem)", salon: "clamp(8.5rem, 13vw, 12rem)" };
-const w = (a: Artwork, h: string) => ({ width: `calc(${h} * ${(a.w / a.h).toFixed(4)})` });
 
 function Controls({ a, i, n, onRemove, onMove }: { a: Artwork; i: number; n: number } & Pick<Props, "onRemove" | "onMove">) {
   if (!onRemove) return null;
@@ -54,8 +54,8 @@ export function CollectionGallery({ works, view, onRemove, onMove }: Props) {
             <ul className="flex items-end gap-3 overflow-x-auto px-1 pb-0 md:gap-5">
               <AnimatePresence mode="popLayout">
                 {row.map((a, i) => (
-                  <motion.li key={a.id} {...item(i)} className="group/item shrink-0" style={{ transformOrigin: "50% 100%", ...w(a, H.shelf) }}>
-                    <ArtworkCard a={a} caption="none" save={false} sizes="180px" />
+                  <motion.li key={a.id} {...item(i)} className="group/item w-min shrink-0" style={{ transformOrigin: "50% 100%" }}>
+                    <ArtworkCard a={a} caption="none" save={false} sizes="180px" rowHeight={H.shelf} />
                   </motion.li>
                 ))}
               </AnimatePresence>
@@ -74,8 +74,8 @@ export function CollectionGallery({ works, view, onRemove, onMove }: Props) {
       <ul className="flex flex-wrap items-start gap-x-4 gap-y-8 md:gap-x-6">
         <AnimatePresence mode="popLayout">
           {works.map((a, i) => (
-            <motion.li key={a.id} {...item(i)} className="group/item flex-none" style={w(a, H.salon)}>
-              <ArtworkCard a={a} sizes="(max-width:768px) 40vw, 16vw" />
+            <motion.li key={a.id} {...item(i)} className="group/item w-min flex-none">
+              <ArtworkCard a={a} sizes="(max-width:768px) 40vw, 16vw" rowHeight={H.salon} />
               <Controls a={a} i={i} n={works.length} onRemove={onRemove} onMove={onMove} />
             </motion.li>
           ))}
@@ -88,8 +88,8 @@ export function CollectionGallery({ works, view, onRemove, onMove }: Props) {
     <ol className="flex flex-wrap items-start gap-x-[calc(var(--gutter)*1.4)] gap-y-14">
       <AnimatePresence mode="popLayout">
         {works.map((a, i) => (
-          <motion.li key={a.id} {...item(i)} className="group/item flex-none" style={w(a, H.wall)}>
-            <ArtworkCard a={a} caption="none" save={false} sizes="(max-width:768px) 60vw, 26vw" />
+          <motion.li key={a.id} {...item(i)} className="group/item w-min flex-none">
+            <ArtworkCard a={a} caption="none" save={false} sizes="(max-width:768px) 60vw, 26vw" rowHeight={H.wall} />
             <div className="mt-3 grid grid-cols-[2em_1fr] gap-2 text-[12px]">
               <span className="label text-ash">{String(i + 1).padStart(2, "0")}</span>
               <div>
@@ -117,9 +117,9 @@ export function CollectionFan({ works, href }: { works: Artwork[]; href: string 
           <span
             key={a.id}
             className="absolute bottom-0 h-[86%] transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:[transform:translateX(var(--tx))_rotate(var(--r2))]"
-            style={{ aspectRatio: `${a.w} / ${a.h}`, transform: `translateX(${(i - m) * 30}%) rotate(${(i - m) * 4}deg)`, "--tx": `${(i - m) * 52}%`, "--r2": `${(i - m) * 7}deg`, zIndex: i, transformOrigin: "50% 120%" } as React.CSSProperties}
+            style={{ ...(a.ratioUnknown ? {} : { aspectRatio: `${a.w} / ${a.h}` }), transform: `translateX(${(i - m) * 30}%) rotate(${(i - m) * 4}deg)`, "--tx": `${(i - m) * 52}%`, "--r2": `${(i - m) * 7}deg`, zIndex: i, transformOrigin: "50% 120%" } as React.CSSProperties}
           >
-            <ArtworkImage a={a} sizes="160px" />
+            <ArtworkImage a={a} sizes="160px" style={{ height: "100%", width: "auto" }} />
           </span>
         );
       })}
