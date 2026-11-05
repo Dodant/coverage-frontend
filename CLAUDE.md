@@ -17,6 +17,7 @@ npm run dev:api        # API 모드로 목업 백엔드에 붙기
 COVERAGE_API_ORIGIN=http://localhost:8080 NEXT_PUBLIC_DATA_SOURCE=api npm run dev   # 실제 백엔드
 npm run build          # API 모드 빌드는 COVERAGE_API_ORIGIN 이 살아 있어야 홈이 채워짐
 npm run data           # data/changbi-meta.json → src/data/artworks.json
+npm run covers         # ../changbi-press/covers 원본 → public/covers/{id}-640/-1400.webp (있는 건 건너뜀, --force 로 전부 재생성)
 npx tsc --noEmit       # 타입 검사 (테스트·ESLint 설정은 아직 없음)
 ```
 - tsc가 `.next/types` 관련 에러를 내면 `rm -rf .next/types` 후 재실행 (소스 문제 아님).
@@ -51,7 +52,7 @@ Next.js 15.5 App Router · React 19 · TypeScript · Tailwind CSS 4 (`@theme` �
 
 ## 이미지·권리
 - `public/covers/{id}-640.webp`, `-1400.webp`는 **git에 없음**(.gitignore). 창비 보도자료 이미지라 공개 배포 전 창비 허락 확인 필요
-- 저장소에 이미지 생성 스크립트가 없음. 백업: `../changbi-press/_coverage_assets.tar` (`tar xf`하면 `covers/` 544개) → `public/`에 풀면 됨
+- 생성: `npm run covers` (`scripts/build-covers.mjs`, sharp). `data/changbi-meta.json`의 각 항목을 `../changbi-press/covers`의 `{id}` 또는 `{id}_*` 파일과 width×height로 대조해 폭 640/1400 WebP로 만든다(확대 없음, 비율 유지, CMYK는 sRGB로). 원본 폴더는 `COVERS_SRC`로 바꿀 수 있음. 백업 `../changbi-press/_coverage_assets.tar`도 같은 세트
 
 ## Git
 - 작업 브랜치 `feat/frontend`. **push하지 않는다** (사용자가 요청할 때만)

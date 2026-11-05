@@ -1,4 +1,4 @@
-# HANDOFF — 2026-11-04 (2차)
+# HANDOFF — 2026-11-05
 
 이전 세션(Claude Code)에서 이어받는 메모. 공통 규칙은 `CLAUDE.md`.
 
@@ -8,11 +8,15 @@
   - `f172718` 백엔드 API 연동 (검색·작품·로그인·좋아요·전시)
   - `3ffab6b` Claude Code 이어받기용 CLAUDE.md, HANDOFF.md 추가
   - `9b6666b` 표지 파일이 없을 때 빈 액자 표시 · `e2b18a1` 빈 캡션·섹션 정리 · `68e366a` watcher `.playwright-mcp/` 제외 · HANDOFF 갱신 — 아래 "2026-11-04 세션에서 한 것" 참고. `npx tsc --noEmit` 통과, `next build` API/mock 두 모드 통과
+  - 2026-11-05: 표지 이미지 생성 스크립트(`npm run covers`) — 아래 "2026-11-05 세션" 참고
 - 구현된 페이지: `/`, `/archive`, `/artwork/[id]`, `/collections`, `/collections/[id]`, `/c/[token]`, `/login`, `/signup`, `/account`
 - **실제 백엔드로 검증 완료 (2026-11-04)** — `coverage-backend` `docker compose up -d` + `./gradlew bootRun`, 프론트 `COVERAGE_API_ORIGIN=http://localhost:8080 NEXT_PUBLIC_DATA_SOURCE=api npm run dev`
   - 응답 형태는 `docs/API_CONTRACT.md`·`scripts/mock-api.mjs`와 일치. `adapt.ts`/`endpoints.ts` 수정 불필요
   - 확인한 것: `browse/{genre,country,year}`에 `sort=createdAt,desc` 허용(엉뚱한 sort 필드는 500) · `search` `sortBy`는 RELEVANCE/LIKES/NEWEST/YEAR_ASC/YEAR_DESC · 표지 `width/height`는 251건 중 86건 null(→ `ratioUnknown` 경로) · 회원가입 검증 `details`가 필드별로 매핑돼 폼에 표시됨 · 잘못된 액세스 토큰 → 401 → `POST /auth/refresh` → 재시도 200(토큰 회전 확인) · 리프레시 토큰 재사용 400 · 좋아요 토글 · 전시 생성/항목 추가/공개범위 변경/서문 · 익명 `/c/[token]` · `/account`
   - 브라우저(Playwright)에서 홈·아카이브·검색·작품·전시·공유·계정 확인, 표지 비율 왜곡 0건
+
+## 2026-11-05 세션에서 한 것 (커밋됨)
+- `scripts/build-covers.mjs` + `npm run covers` + devDependency `sharp`: `../changbi-press/covers` 원본 → `public/covers/{id}-640/-1400.webp`. 271건 전부 원본과 width×height 일치 확인(모호한 후보 3건도 치수로 구분됨). 기존 tar 세트와 비교: 파일 목록 동일, 치수 동일(1px 반올림 2건), CMYK 14건은 ICC 변환이라 색이 약간 다름(깨짐 없음). CLAUDE.md·README 갱신
 
 ## 2026-11-04 세션에서 한 것 (커밋됨)
 - `ArtworkImage`: 파일이 없거나 로드 실패한 표지는 깨진 이미지 대신 **빈 액자(`.art-missing`, 점선+해칭)** 를 표지 비율로 유지 → 그리드 높이 통일 유지. `EditionsRail`/`EditionsFan`/`CompareOverlay`의 raw `<img>`도 실패 시 기존 `EditionPlaceholder`로 전환
@@ -34,14 +38,13 @@
    - `/collections/public` 요약에 `shareToken`, 또는 공개 컬렉션 익명 GET 허용
    - Work(작품) 엔드포인트(현재 작품별 보기는 히트마다 2~3회 호출), 검색 facet 집계(항상 빈 값), CORS
    - 개발 DB smoke 잔재 정리 + 삭제 책 reindex (위 참고)
-2. 표지 이미지 생성 스크립트 추가 (`changbi-press/covers` → 640/1400 WebP, 원본 비율 유지). 현재는 tar 백업에 의존
-3. 테스트/린트 세팅 (Playwright E2E를 저장소로 옮기기, ESLint 설정)
-4. 공개 배포 전 창비 표지 사용 권한 확인
+2. 테스트/린트 세팅 (Playwright E2E를 저장소로 옮기기, ESLint 설정)
+3. 공개 배포 전 창비 표지 사용 권한 확인
 
 ## 정리 대기
 `../changbi-press/`에 이전 파일 전송용 압축들이 남아 있음 — 사용자 확인 후 삭제:
 `_backend_src.tgz`, `_coverage_frontend_src.tgz`, `_coverage_works_update.tgz`, `_coverage_dark.tgz` (불필요)
-`_coverage_assets.tar` (~107MB)는 `public/covers` 유일한 백업이므로 2번 전엔 지우지 말 것
+`_coverage_assets.tar` (~107MB)는 이제 `npm run covers`로 재생성 가능하므로 지워도 됨 (사용자 확인 후)
 
 ## 참고
 - 디자인 캔버스(Claude artifact, Design type): https://claude.ai/code/artifact/20e87c3f-a17c-4649-a741-2016b5b69f76

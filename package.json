@@ -8,6 +8,7 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "data": "node scripts/build-data.mjs",
+    "covers": "node scripts/build-covers.mjs",
     "mock-api": "node scripts/mock-api.mjs",
     "dev:api": "COVERAGE_API_ORIGIN=http://localhost:4010 NEXT_PUBLIC_DATA_SOURCE=api next dev -p 3000"
   },
@@ -27,6 +28,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.4",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.1.10",
     "typescript": "^5.8.3"
   }
