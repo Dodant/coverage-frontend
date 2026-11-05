@@ -11,11 +11,10 @@ const ROW = {
   regular: { h: "clamp(11.5rem, 19vw, 17.5rem)", gap: "gap-x-5 gap-y-12 md:gap-x-8" },
   large: { h: "clamp(17rem, 30vw, 27rem)", gap: "gap-x-6 gap-y-16 md:gap-x-12" },
 };
-const COLS = ROW;
 const SIZES = { compact: "(max-width:640px) 30vw, 12vw", regular: "(max-width:640px) 46vw, 18vw", large: "(max-width:640px) 92vw, 26vw" };
 
 /** Covers stand in rows of equal height, like books on a shelf; proportions are never altered. */
-export function ArtworkGrid({ works, density = "regular", stack = false }: { works: Artwork[]; density?: keyof typeof COLS; stack?: boolean }) {
+export function ArtworkGrid({ works, density = "regular", stack = false }: { works: Artwork[]; density?: keyof typeof ROW; stack?: boolean }) {
   const reduce = useReducedMotion();
   return (
     <motion.ul layout={!reduce} className={`flex flex-wrap items-start ${ROW[density].gap}`}>

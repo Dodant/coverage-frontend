@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-e2e
 out
 *.tsbuildinfo
 next-env.d.ts
@@ -11,3 +12,7 @@ public/covers/
 
 # Browser-automation screenshots and snapshots
 .playwright-mcp/
+
+# Playwright output
+playwright-report/
+test-results/

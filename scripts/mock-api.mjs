@@ -336,7 +336,7 @@ route("POST", "/likes/{type}/{id}", async (req, _q, p) => {
   if (!LIKE_TYPES.includes(p.type)) throw bad("잘못된 값입니다", { parameterName: "targetType", allowedValues: LIKE_TYPES });
   const k = `${u.id}|${p.type}|${p.id}`;
   const liked = !likes.has(k);
-  liked ? likes.add(k) : likes.delete(k);
+  if (liked) likes.add(k); else likes.delete(k);
   const n = likeCount(p.type, p.id);
   const c = covers.get(p.id); if (c) c.likeCount = n;
   return [200, { liked, likeCount: n }];
