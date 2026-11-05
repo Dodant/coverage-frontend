@@ -9,7 +9,9 @@ export function safeNext(raw: string | null): string {
   if (!raw) return "/";
   try {
     const u = new URL(raw, "http://coverage.local");
-    return u.origin === "http://coverage.local" ? u.pathname + u.search + u.hash : "/";
+    const path = u.pathname + u.search + u.hash;
+    // Same origin, and a path that starts with exactly one "/" — `http://coverage.local//host` has pathname `//host`.
+    return u.origin === "http://coverage.local" && /^\/(?![\/\\])/.test(path) ? path : "/";
   } catch { return "/"; }
 }
 
