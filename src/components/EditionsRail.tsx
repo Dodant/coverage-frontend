@@ -17,9 +17,9 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-/** Editions of one work, grouped: original · translations · variants of this edition · redesigns. */
 const VARIANT_LABEL: Record<string, string> = { INITIAL: "초판", RECOVER: "리커버", SPECIAL: "특별판", PRINTING: "쇄 변경", IMAGE_REPLACEMENT: "이미지 교체" };
 
+/** Editions of one work, grouped: original · translations · variants of this edition · redesigns. */
 export function EditionsRail({ a, current, onSelect, notice, variant = null, onVariant }: {
   a: Artwork; current: string; onSelect: (key: string) => void; notice: (t: string) => void;
   /** Selected cover id within the edition, and a setter (live data only). */

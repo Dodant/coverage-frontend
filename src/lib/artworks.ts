@@ -142,7 +142,6 @@ export const FAMILIES: { id: ColorFamily; en: string; kr: string; swatch: string
 export const IMPRINTS = [...new Set(ARTWORKS.map((a) => a.imprint))];
 export const YEARS = [...new Set(ARTWORKS.map((a) => a.year).filter(Boolean) as number[])].sort();
 export const COUNTRIES = [...new Set(ARTWORKS.map((a) => a.country).filter(Boolean) as string[])];
-export const LANGUAGES = [...new Set(ARTWORKS.map((a) => a.language).filter(Boolean) as string[])];
 
 export const auroraVars = (a: Artwork) => ({
   "--a1": a.aurora[0],
@@ -184,13 +183,6 @@ export const related = (a: Artwork, n = 8) => {
 };
 
 export const fmtDate = (a: Artwork) => (a.year ? `${a.year}${a.month ? "." + String(a.month).padStart(2, "0") : ""}` : "—");
-
-/** Curated selections for the homepage. */
-export const EXHIBITION_IDS = (() => {
-  // Poetry & fiction with expressive colour — sorted by saturation.
-  const pool = ARTWORKS.filter((a) => ["poetry", "fiction", "picture"].includes(a.genre) && a.sat > 0.35);
-  return pool.sort((a, b) => b.sat - a.sat).slice(0, 7).map((a) => a.id);
-})();
 
 export const LANG_LABEL: Record<string, { en: string; kr: string }> = {
   KO: { en: "Korean", kr: "한국어" }, EN: { en: "English", kr: "영어" }, ES: { en: "Spanish", kr: "스페인어" },

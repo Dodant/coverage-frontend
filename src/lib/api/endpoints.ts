@@ -49,12 +49,6 @@ export const browseBy = (facet: "country" | "year" | "genre" | "tag", value: str
     revalidate,
   });
 
-/** Search/browse ids are "original_<uuid>" etc. */
-export function parseDocId(id: string): { kind: "ORIGINAL" | "TRANSLATED" | "REDESIGN"; uuid: string } | null {
-  const m = id.match(/^(original|translated|redesign)_(.+)$/);
-  return m ? { kind: m[1].toUpperCase() as "ORIGINAL" | "TRANSLATED" | "REDESIGN", uuid: m[2] } : null;
-}
-
 // ── Books & covers ───────────────────────────────────────────────────────
 export const getOriginal = (id: string, revalidate?: number) => api<OriginalBookResponse>(`/books/original/${enc(id)}`, { auth: "none", revalidate });
 export const getTranslated = (id: string, revalidate?: number) => api<TranslatedBookResponse>(`/books/translated/${enc(id)}`, { auth: "none", revalidate });

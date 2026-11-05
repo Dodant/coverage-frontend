@@ -6,8 +6,6 @@ import { loadRelated, loadWork } from "@/lib/api/works";
 import { ArtworkViewer } from "@/components/ArtworkViewer";
 
 // Mock data is pre-rendered; live data is rendered on demand (and cached briefly by fetch).
-export const dynamicParams = true;
-
 export function generateStaticParams() {
   return USE_API ? [] : ARTWORKS.map((a) => ({ id: a.id }));
 }

@@ -8,7 +8,6 @@ export interface Collection {
   note: string;
   ids: string[];
   createdAt: number;
-  hue: number;
 }
 interface State {
   favorites: string[];
@@ -75,7 +74,7 @@ export const actions = {
     return !has;
   },
   createCollection(name: string, ids: string[] = []) {
-    const c: Collection = { id: uid(), name: name.trim() || "Untitled Exhibition", note: "", ids, createdAt: Date.now(), hue: Math.floor(Math.random() * 360) };
+    const c: Collection = { id: uid(), name: name.trim() || "Untitled Exhibition", note: "", ids, createdAt: Date.now() };
     commit({ ...state, collections: [c, ...state.collections] });
     return c;
   },

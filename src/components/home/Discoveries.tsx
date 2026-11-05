@@ -8,7 +8,7 @@ import { AuroraBackground } from "../AuroraBackground";
 import { ArtworkCard } from "../ArtworkCard";
 import { EditorialHeading } from "../EditorialHeading";
 import { Magnetic } from "../Magnetic";
-import { EASE_OUT } from "../motion";
+import { EASE_OUT, EASE_SOFT } from "../motion";
 
 const ROT = [-7, 2, 8];
 
@@ -63,7 +63,7 @@ export function Discoveries() {
                   className="flex-none"
                   initial={reduce ? false : { opacity: 0, y: -120, rotate: ROT[i] * 3, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, rotate: ROT[i], scale: 1, transition: { duration: 0.8, ease: EASE_OUT, delay: i * 0.09 } }}
-                  exit={{ opacity: 0, y: 80, rotate: ROT[i] * -2, transition: { duration: 0.35, ease: [0.65, 0, 0.35, 1] } }}
+                  exit={{ opacity: 0, y: 80, rotate: ROT[i] * -2, transition: { duration: 0.35, ease: EASE_SOFT } }}
                 >
                   <ArtworkCard a={a} caption="none" save={false} sizes="(max-width:768px) 30vw, 18vw" rowHeight="clamp(8rem, 21vw, 19rem)" />
                   <div className="mt-4 hidden md:block" style={{ transform: `rotate(${-ROT[i]}deg)` }}>
