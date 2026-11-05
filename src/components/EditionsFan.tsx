@@ -65,6 +65,8 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
 
   const label = (e: Edition) => `${e.kind === "original" ? "Original · " : ""}${e.lang ?? "??"} · ${e.year ?? "—"}`;
   const focus = hover !== null && items[hover]?.kind === "edition" ? (items[hover] as { e: Edition }).e : null;
+  const [missing, setMissing] = useState<Set<string>>(new Set()); // covers whose file failed to load
+
 
   return (
     <motion.div
@@ -84,6 +86,7 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
         <ul className="relative" style={{ width: span, height: height + (compressed ? 0 : 22) }} onPointerLeave={() => setHover(null)}>
           {items.map((it, i) => {
             const w = widthOf(it);
+            const im = it.kind === "edition" && !missing.has(it.e.key) ? editionImage(a, it.e) : null;
             const pos = { [dir === 1 ? "left" : "right"]: lefts[i] } as React.CSSProperties;
             const lifted = compressed && hover === i;
             const z = lifted ? 200 : i === 0 ? 150 : it.kind === "more" ? 140 : items.length - i;
@@ -110,10 +113,10 @@ export function EditionsFan({ a, height, dir, room, onClose }: { a: Artwork; hei
                 )}
                 {it.kind === "edition" ? (
                   <Link href={it.e === own ? `/artwork/${a.id}` : `/artwork/${a.id}?edition=${it.e.key}`} className="block outline-offset-2" onClick={onClose} aria-label={`${a.title} — ${label(it.e)}`}>
-                    {editionImage(a, it.e) ? (
+                    {im ? (
                       // Height fixed, width from the image's own proportions — never stretched.
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={editionImage(a, it.e)!.url} alt="" className="block max-w-none shadow-[0_6px_14px_-6px_rgb(0_0_0/0.35)]" style={{ height, width: "auto" }} />
+                      <img src={im.url} alt="" onError={() => setMissing((s) => new Set(s).add(it.e.key))} className="block max-w-none shadow-[0_6px_14px_-6px_rgb(0_0_0/0.35)]" style={{ height, width: "auto" }} />
                     ) : (
                       <div className="bg-museum shadow-[0_6px_14px_-6px_rgb(0_0_0/0.25)]">
                         <EditionPlaceholder e={it.e} workTitle={a.title} size="sm" style={{ height }} />

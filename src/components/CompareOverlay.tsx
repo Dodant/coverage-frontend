@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Artwork } from "@/lib/artworks";
 import { editionImage, trimMm } from "@/lib/artworks";
@@ -22,6 +22,8 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
 
   const H = "56vh";
   const known = a.editions.map((e) => trimMm(e.format));
+  const [missing, setMissing] = useState<Set<string>>(new Set()); // covers whose file failed to load
+
 
   return createPortal(
     <motion.div
@@ -41,11 +43,12 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
       <div className="wrap mt-10 flex w-full flex-1 items-end justify-center gap-[clamp(1rem,4vw,3.5rem)] overflow-x-auto pb-4">
         {a.editions.map((e, i) => {
           const mm = known[i];
+          const im = missing.has(e.key) ? null : editionImage(a, e, 1400);
           return (
             <figure key={e.key} className="m-0 shrink-0">
-              {editionImage(a, e, 1400) ? (
+              {im ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={editionImage(a, e, 1400)!.url} alt={`${a.title} — ${editionLabel(e)}`} className="block max-w-none shadow-[0_30px_60px_-24px_rgb(0_0_0/0.8)]" style={{ height: H, width: "auto" }} />
+                <img src={im.url} alt={`${a.title} — ${editionLabel(e)}`} onError={() => setMissing((s) => new Set(s).add(e.key))} className="block max-w-none shadow-[0_30px_60px_-24px_rgb(0_0_0/0.8)]" style={{ height: H, width: "auto" }} />
               ) : (
                 <EditionPlaceholder e={e} workTitle={a.title} tone="dark" style={{ height: H }} />
               )}

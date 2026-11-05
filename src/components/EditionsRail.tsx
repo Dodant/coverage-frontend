@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import type { Artwork, Edition } from "@/lib/artworks";
 import { editionImage } from "@/lib/artworks";
 import { EditionPlaceholder } from "./EditionPlaceholder";
@@ -26,18 +28,21 @@ export function EditionsRail({ a, current, onSelect, notice, variant = null, onV
   const originals = a.editions.filter((e) => e.kind === "original");
   const translations = a.editions.filter((e) => e.kind === "translation");
   const sel = a.editions.find((e) => e.key === current)!;
+  const [missing, setMissing] = useState<Set<string>>(new Set()); // covers whose file failed to load
+
 
   const Item = ({ e }: { e: Edition }) => {
     const on = e.key === current;
+    const im = missing.has(e.key) ? null : editionImage(a, e);
     return (
       <button type="button" aria-pressed={on} onClick={() => onSelect(e.key)} className="group block w-[5.5rem] text-left md:w-[6.75rem]">
-        {editionImage(a, e) ? (
+        {im ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={editionImage(a, e)!.url} alt="" className={`block w-full shadow-[0_8px_18px_-8px_rgb(0_0_0/0.4)] transition-transform duration-300 group-hover:-translate-y-1 ${on ? "outline outline-2 outline-offset-4 outline-ink" : ""}`} />
+          <img src={im.url} alt="" onError={() => setMissing((s) => new Set(s).add(e.key))} className={`block w-full shadow-[0_8px_18px_-8px_rgb(0_0_0/0.4)] transition-transform duration-300 group-hover:-translate-y-1 ${on ? "outline outline-2 outline-offset-4 outline-ink" : ""}`} />
         ) : (
           <EditionPlaceholder e={e} workTitle={a.title} size="sm" className={`transition-transform duration-300 group-hover:-translate-y-1 ${on ? "outline outline-2 outline-offset-4 outline-ink" : ""}`} />
         )}
-        <span className={`label mt-2 block text-[10px] ${on ? "font-medium" : "text-ink/70"}`}>{editionLabel(e)} {on ? "●" : editionImage(a, e) ? "" : "◌"}</span>
+        <span className={`label mt-2 block text-[10px] ${on ? "font-medium" : "text-ink/70"}`}>{editionLabel(e)} {on ? "●" : im ? "" : "◌"}</span>
       </button>
     );
   };

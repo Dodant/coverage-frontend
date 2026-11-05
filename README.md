@@ -82,3 +82,4 @@ Code: `src/lib/api/` — `client.ts` (fetch wrapper, `ApiError`, one retry after
 - **No "my likes" list**, so there is no Saved page in API mode; the heart is per cover.
 - `POST /collections/{id}/duplicate` returns `items: []` — the UI navigates to the copy and re-fetches.
 - Search facets are always empty, so filter options are fixed lists.
+- **Deleted books linger in the search index** (the hit's detail call returns 404); the UI drops those hits. Hits can also point at cover files that no longer exist in storage — the UI keeps an empty frame at the cover's proportions instead of a broken image.
