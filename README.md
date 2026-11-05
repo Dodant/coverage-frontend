@@ -15,7 +15,7 @@ npm run dev        # http://localhost:3000
 npm run build && npm start
 ```
 
-Next.js 15.5 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Motion 12. Fonts are self-hosted from npm (Space Grotesk, Instrument Serif, IBM Plex Mono, Pretendard Variable), so builds need no network.
+Next.js 15.5 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Motion 12. Fonts are self-hosted from npm (Space Grotesk, Instrument Serif, IBM Plex Mono, Pretendard Variable), so builds need no network. Pretendard uses the package's dynamic-subset stylesheet, so a page loads only the unicode-range slices it draws.
 
 ## Pages
 
@@ -51,7 +51,7 @@ npm run lint       # ESLint: next/core-web-vitals + next/typescript (eslint.conf
 npm run e2e        # Playwright; first time: npx playwright install chromium
 ```
 
-`e2e/` runs the app in API mode against `scripts/mock-api.mjs`, on its own ports (web 3100, API 4110) and `.next-e2e`, so a running `npm run dev` is not disturbed. It checks the design rules (no cover is stretched or cropped, grid rows / editions fan / Compare hang at one height) and the live flows (signup field errors, off-site `next` ignored, like, new exhibition → link-only → anonymous share page, 401 → refresh → retry); route ids that are not UUIDs must 404. The suite needs the cover files in `public/covers` (`npm run covers`): the mock advertises them and every proportion check waits for a real image.
+`e2e/` runs the app in API mode against `scripts/mock-api.mjs`, on its own ports (web 3100, API 4110) and `.next-e2e`, so a running `npm run dev` is not disturbed; `e2e/mock/` runs the mock-data mode (web 3101, `.next-e2e-mock`) for the browser-local favourites and exhibitions. It checks the design rules (no cover is stretched or cropped, grid rows / editions fan / Compare hang at one height) and the live flows (signup field errors, off-site `next` ignored, like, new exhibition → link-only → anonymous share page, 401 → refresh → retry); route ids that are not UUIDs must 404 without reaching the backend. It also covers session resilience (a 5xx refresh keeps the session, two tabs renewing at once), a share link closing the moment a room turns private, exhibition views at one height when the API omits cover sizes, Compare focus handling, the security headers, font file sizes, and that API-mode client JS carries no mock dataset. The suite needs the cover files in `public/covers` (`npm run covers`): the mock advertises them and every proportion check waits for a real image.
 
 ## Live data (coverage-backend)
 

@@ -1,4 +1,4 @@
-# HANDOFF — 2026-11-05
+# HANDOFF — 2026-11-06
 
 이전 세션(Claude Code)에서 이어받는 메모. 공통 규칙은 `CLAUDE.md`.
 
@@ -52,6 +52,19 @@
 
 ## 2026-11-05 리뷰 (`/review`, PR #1 기준 b6143fd)
 - 자동 수정 68건 + 문서 10건은 `526f469`…`d5eb565` 9개 커밋으로 반영됨(세션 JSON 검증, 목업 API 계약 불일치 4건, `?by=` 검증·URL 동기화, 전시실 fetch alive 가드·더블클릭 방지, 좋아요 경합, "Nonfiction"→fiction·언어 표기 오류, 로그인 뒤 /login 재진입 방지, 서버 fetch 10초 타임아웃, 죽은 코드·stale 문서 정리 등). tsc·lint·E2E 10건·mock 빌드 통과 확인
-- 사용자가 승인했지만 **아직 안 한 수정**(리뷰어 발견 순, 자세한 근거는 리뷰 보고): 세션 5xx 유지·늦은 refresh 응답 무시·계정 전환 재로드·401 재시도(`session.ts`/`client.ts`/`AccountView`), 탭 간 refresh Web Locks, 보안 헤더 + `getSharedCollection` no-store, 전시실 높이 통일(`CollectionGallery` rowHeight, 팬 2곳, `EditionsFan` 측정 비율, `ArtworkCard` 하이드레이션 전 로드), Compare 오버플로 + Compare/Inspect 포커스 트랩·복귀, 서문 자동저장 덮어쓰기 제거 + 추가 시 선택 판본 기억, `EditionsRail` Item 호이스팅 + 번역 히트 중복 호출 제거, Pretendard 동적 서브셋, 목업 데이터 번들 분리, 목업 모드 E2E 프로젝트 + covers 사전조건, 컬렉션 100개 초과 페이지네이션
-- 그 수정들을 지키는 **테스트는 먼저 써 두었고** `.gstack/tmp/review-phase1-tests.patch`에 있음(`git apply`). 수정 전에는 의도적으로 빨간 테스트가 섞여 있으니 수정과 함께 적용할 것
+- 사용자가 승인한 수정은 2026-11-06에 반영(아래 "2026-11-06 세션"): 세션 5xx 유지·늦은 refresh 응답 무시·계정 전환 재로드·401 재시도(`session.ts`/`client.ts`/`AccountView`), 탭 간 refresh Web Locks, 보안 헤더 + `getSharedCollection` no-store, 전시실 높이 통일(`CollectionGallery` rowHeight, 팬 2곳, `EditionsFan` 측정 비율, `ArtworkCard` 하이드레이션 전 로드), Compare 오버플로 + Compare/Inspect 포커스 트랩·복귀, 서문 자동저장 덮어쓰기 제거 + 추가 시 선택 판본 기억, `EditionsRail` Item 호이스팅 + 번역 히트 중복 호출 제거, Pretendard 동적 서브셋, 목업 데이터 번들 분리, 목업 모드 E2E 프로젝트 + covers 사전조건, 컬렉션 100개 초과 페이지네이션
 - Skip으로 기록: 판본 팬 Escape(window keydown) · reduced-motion MotionConfig · 홈 ISR 오류 캐시 · advisory 정리
+
+## 2026-11-06 세션
+- 리뷰에서 승인된 수정 반영. 먼저 써 둔 테스트(수정 전 9건 빨강)를 적용한 뒤 구현, E2E 26건 통과(api 24 + mock 2), tsc·lint, `next build` 목업·API 두 모드 통과
+  - 세션: 갱신 400/401만 종료(5xx 유지), 갱신 중 로그아웃·계정 전환이면 응답 버림, 탭 간 Web Lock, 401 때 다른 호출이 이미 회전한 토큰으로 재시도. `AccountView`는 계정 전환 시 다시 로드
+  - `next.config.ts` 보안 헤더(frame-ancestors 'none', X-Frame-Options, nosniff, Referrer-Policy), 공유 링크 no-store
+  - 전시실 Wall/Shelf/Salon과 팬 2곳이 크기 없는 표지도 같은 높이, `EditionsFan`은 로드된 이미지 비율로 배치, `ArtworkCard`는 하이드레이션 전에 끝난 이미지 비율도 읽음
+  - Compare 오버플로 시 첫 판본 접근 가능, Compare·Inspect 포커스 트랩·복귀(`useDialogFocus`)
+  - 서문 입력 중 다른 수정의 응답이 덮어쓰지 않음, 다른 판본을 고른 채 저장하면 그 판본의 경로·제목으로 기억
+  - 번역 히트의 원서 조회를 `fetchWork`로 합쳐 중복 요청 제거, `EditionsRail` Item 모듈 스코프로
+  - Pretendard 2MB 단일 파일 → dynamic subset, 목업 데이터셋을 `mockData.ts`로 분리하고 목업 전용 화면은 빌드 시 접히는 분기로
+  - 내 전시 100개 초과도 모두 불러옴(`allMyCollections`)
+- 탭 간 갱신 테스트는 경합 테스트라 Web Lock을 빼도 3번 중 1번만 실패함(잡기는 함)
+- 리뷰 재실행(`/review`)은 아직 안 함
+
