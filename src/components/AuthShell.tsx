@@ -11,7 +11,9 @@ export function safeNext(raw: string | null): string {
     const u = new URL(raw, "http://coverage.local");
     const path = u.pathname + u.search + u.hash;
     // Same origin, and a path that starts with exactly one "/" — `http://coverage.local//host` has pathname `//host`.
-    return u.origin === "http://coverage.local" && /^\/(?![\/\\])/.test(path) ? path : "/";
+    if (u.origin !== "http://coverage.local" || !/^\/(?![\/\\])/.test(path)) return "/";
+    // Never bounce a freshly signed-in visitor back onto the sign-in or join form.
+    return /^\/(login|signup)(?=[/?#]|$)/.test(path) ? "/" : path;
   } catch { return "/"; }
 }
 

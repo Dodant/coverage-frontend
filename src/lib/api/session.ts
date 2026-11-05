@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { apiBase } from "./config";
 import type { AuthResponse, AuthUserInfo } from "./types";
 
 /**
@@ -29,7 +30,9 @@ function load() {
   loaded = true;
   try {
     const raw = localStorage.getItem(KEY);
-    current = raw ? (JSON.parse(raw) as Session) : null;
+    const s = raw ? (JSON.parse(raw) as Partial<Session>) : null;
+    // Only a well-formed session is trusted; a stale or tampered value would otherwise crash every page in the nav.
+    current = s && typeof s.accessToken === "string" && typeof s.refreshToken === "string" && typeof s.expiresAt === "number" && typeof s.user?.id === "string" ? (s as Session) : null;
   } catch {
     current = null;
   }
@@ -80,7 +83,7 @@ export function refreshOnce(): Promise<Session | null> {
   const usedToken = s.refreshToken;
   inflight = (async () => {
     try {
-      const res = await fetch("/api/auth/refresh", {
+      const res = await fetch(`${apiBase()}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: usedToken }),

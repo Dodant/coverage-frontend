@@ -1,6 +1,9 @@
 import { apiBase } from "./config";
 import type { ErrorResponse } from "./types";
 
+/** Server-side calls (ISR, share links) give up after this long; the client keeps the browser's own limits. */
+const SERVER_TIMEOUT_MS = 10_000;
+
 /** An API error normalised from the backend's ErrorResponse (or a network failure). */
 export class ApiError extends Error {
   constructor(
@@ -77,21 +80,23 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
   }
 
   const url = `${apiBase()}${path}${qs(query)}`;
-  const doFetch = () =>
-    fetch(url, {
-      ...rest,
-      headers: h,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      ...(isClient ? {} : { next: revalidate === undefined ? { revalidate: 60 } : revalidate === false ? undefined : { revalidate } }),
-      ...(isClient || revalidate !== false ? {} : { cache: "no-store" as const }),
-    });
+  const doFetch = async () => {
+    try {
+      return await fetch(url, {
+        ...rest,
+        headers: h,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        // A hung backend must not hold a server render open for minutes.
+        ...(isClient ? {} : { signal: AbortSignal.timeout(SERVER_TIMEOUT_MS) }),
+        ...(isClient ? {} : { next: revalidate === undefined ? { revalidate: 60 } : revalidate === false ? undefined : { revalidate } }),
+        ...(isClient || revalidate !== false ? {} : { cache: "no-store" as const }),
+      });
+    } catch (e) {
+      throw new ApiError(0, "NETWORK_ERROR", e instanceof Error ? e.message : "Network error");
+    }
+  };
 
-  let res: Response;
-  try {
-    res = await doFetch();
-  } catch (e) {
-    throw new ApiError(0, "NETWORK_ERROR", e instanceof Error ? e.message : "Network error");
-  }
+  let res = await doFetch();
 
   // Access token rejected (e.g. expired early) → refresh once and retry.
   if (res.status === 401 && isClient && token) {

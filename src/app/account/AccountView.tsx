@@ -22,7 +22,10 @@ export function AccountView() {
   useEffect(() => {
     if (!getSession()) { router.replace("/login?next=/account"); return; }
     getMe().then((m) => { setMe(m); setName(m.displayName); setWebsite(m.websiteUrl ?? ""); setPortfolio(m.portfolioUrl ?? ""); })
-      .catch((e) => { if (e instanceof ApiError && e.isAuth) router.replace("/login?next=/account"); });
+      .catch((e) => {
+        if (e instanceof ApiError && e.isAuth) { router.replace("/login?next=/account"); return; }
+        setErrors({ form: e instanceof ApiError && e.status === 0 ? "서버에 연결할 수 없습니다 · Can't reach the server." : "프로필을 불러오지 못했습니다 · Couldn't load your profile. 새로고침해 주세요." });
+      });
   }, [router]);
 
   const save = async (e: React.FormEvent) => {
