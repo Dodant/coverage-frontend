@@ -28,6 +28,7 @@ export function genreOf(raw: string | null | undefined): Genre {
   if (/시|poetry|poem/.test(s) && !/시리즈/.test(s)) return "poetry";
   if (/청소년|young adult|\bya\b/.test(s)) return "ya";
   if (/동화|아동|어린이|children/.test(s)) return "children";
+  if (/non-?fiction|인문|교양/.test(s)) return "nonfiction";
   if (/소설|fiction|novel|sf|판타지|fantasy|mystery/.test(s)) return "fiction";
   if (/산문|에세이|essay/.test(s)) return "essay";
   if (/평론|비평|criticism/.test(s)) return "criticism";
@@ -97,8 +98,6 @@ export function workFromBooks(primary: Book, original: OriginalBookResponse | nu
   if (original) editions.push(editionOf(original));
   for (const t of [...translations].sort((x, y) => (x.year ?? 0) - (y.year ?? 0))) editions.push(editionOf(t));
   if (!editions.some((e) => e.bookId === primary.id)) editions.push(editionOf(primary));
-  // Mark the viewed edition as "the" cover of this artwork.
-  const ed = editions.map((e) => ({ ...e }));
   const genreLabel = original?.genre ?? (isOriginal(primary) ? primary.genre : null);
   const translated = kind === "TRANSLATED";
   return {
@@ -125,8 +124,9 @@ export function workFromBooks(primary: Book, original: OriginalBookResponse | nu
     h: front?.h ?? 3,
     ratioUnknown: !(front?.w && front?.h),
     translated,
-    editions: ed,
-    language: LANG[(primary.languageCode ?? "").toLowerCase()] ?? primary.languageCode,
+    editions,
+    // The work's source language (the original's), as in the mock data; the viewer labels each edition's own language.
+    language: LANG[((original ?? primary).languageCode ?? "").toLowerCase()] ?? (original ?? primary).languageCode,
     country: countryName(original?.countryCode ?? primary.countryCode),
     ...colourFields(primary.frontCover?.dominantColor ?? null),
     remote: {

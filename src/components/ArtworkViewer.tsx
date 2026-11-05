@@ -210,7 +210,7 @@ export function ArtworkViewer({ a, prev = null, next = null, related, no }: Prop
                 <Row k="Publisher" v={a.imprint} />
                 <Row k="Published" v={fmtDate(a)} />
                 <Row k="Series" v={a.series && `${a.series}${a.volume ? ` · ${a.volume}` : ""}`} />
-                <Row k="Language" v={a.translated ? `한국어 (from ${a.language ?? "—"})` : a.language} />
+                <Row k="Language" v={a.translated ? `${LANG_LABEL[own.lang ?? ""]?.kr ?? "한국어"} (from ${a.language ?? "—"})` : a.language} />
                 <Row k="Origin" v={a.country ?? (a.translated ? "—" : null)} />
                 <Row k="Format" v={[a.format, a.pages && `${a.pages}p`, a.price && `₩${a.price.toLocaleString("ko-KR")}`].filter(Boolean).join(" · ") || null} />
               </dl>
