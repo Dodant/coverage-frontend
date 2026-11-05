@@ -66,6 +66,17 @@ export const likeStatus = (type: LikeTargetType, coverId: string) =>
 // ── Collections ──────────────────────────────────────────────────────────
 export const myCollections = (page = 0, size = 100) =>
   api<SpringPage<CollectionSummaryResponse>>("/collections/my", { query: { page, size, sort: "createdAt,desc" }, auth: "required" });
+/** Every one of the member's rooms, page by page (a page holds at most 100). */
+export async function allMyCollections() {
+  const all: CollectionSummaryResponse[] = [];
+  // ponytail: sequential pages, capped at 50 (5,000 rooms); parallelise if anyone ever gets near it
+  for (let page = 0; page < 50; page++) {
+    const p = await myCollections(page, 100);
+    all.push(...p.content);
+    if (p.last || p.content.length === 0) break;
+  }
+  return all;
+}
 export const publicCollections = (page = 0, size = 12, revalidate?: number) =>
   api<SpringPage<CollectionSummaryResponse>>("/collections/public", { query: { page, size, sort: "createdAt,desc" }, auth: "none", revalidate });
 export const getCollection = (id: string) => api<CollectionResponse>(`/collections/${enc(id)}`, { auth: "required" });

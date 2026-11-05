@@ -8,7 +8,7 @@ import { EditorialHeading } from "@/components/EditorialHeading";
 import { AuroraBackground } from "@/components/AuroraBackground";
 import { EASE_OUT } from "@/components/motion";
 import { ApiError } from "@/lib/api/client";
-import { createCollection, deleteCollection, getCollection, myCollections, publicCollections, updateCollection } from "@/lib/api/endpoints";
+import { allMyCollections, createCollection, deleteCollection, getCollection, publicCollections, updateCollection } from "@/lib/api/endpoints";
 import { useSession } from "@/lib/api/session";
 import { useCollectionWorks } from "@/lib/api/collectionWorks";
 import type { CollectionResponse, CollectionSummaryResponse, CollectionVisibility } from "@/lib/api/types";
@@ -47,7 +47,7 @@ export function CollectionsIndexApi() {
 
   const reload = useCallback(() => {
     if (!session) { setMine([]); return; }
-    myCollections().then((p) => setMine(p.content)).catch((e) => { setMine([]); setError(msg(e)); });
+    allMyCollections().then(setMine).catch((e) => { setMine([]); setError(msg(e)); });
   }, [session]);
   useEffect(() => { if (hydrated) reload(); }, [hydrated, reload]);
   const loadOpen = useCallback(() => {

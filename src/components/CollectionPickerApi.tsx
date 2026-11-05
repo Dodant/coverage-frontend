@@ -4,10 +4,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Artwork } from "@/lib/artworks";
-import { addCollectionItem, createCollection, getCollection, myCollections, removeCollectionItem } from "@/lib/api/endpoints";
+import { addCollectionItem, allMyCollections, createCollection, getCollection, removeCollectionItem } from "@/lib/api/endpoints";
 import type { CollectionItemType, CollectionResponse } from "@/lib/api/types";
 import { useSession } from "@/lib/api/session";
 import { rememberCover } from "@/lib/api/coverIndex";
+import { pool } from "@/lib/api/works";
 import { EASE_OUT } from "./motion";
 
 /** "Add to exhibition" for live data: the user's server-side collections. Items are covers. */
@@ -29,10 +30,10 @@ export function CollectionPickerApi({ art, className = "" }: { art: Artwork; cla
     let alive = true;
     (async () => {
       try {
-        const page = await myCollections();
-        // Membership needs each collection's items (no "contains" endpoint).
-        const full = await Promise.all(page.content.map((c) => (c.itemCount ? getCollection(c.id).catch(() => null) : null)));
-        if (alive) setRows(page.content.map((c, i) => ({ id: c.id, name: c.name, has: Boolean(full[i]?.items.some((x) => x.itemId === r.coverId)) })));
+        const rooms = await allMyCollections();
+        // Membership needs each collection's items (no "contains" endpoint); six at a time.
+        const full = await pool(rooms, 6, (c) => (c.itemCount ? getCollection(c.id).catch(() => null) : Promise.resolve(null)));
+        if (alive) setRows(rooms.map((c, i) => ({ id: c.id, name: c.name, has: Boolean(full[i]?.items.some((x) => x.itemId === r.coverId)) })));
       } catch { if (alive) setRows([]); }
     })();
     return () => { alive = false; };
