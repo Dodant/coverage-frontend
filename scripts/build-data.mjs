@@ -2,8 +2,9 @@
 // Run: npm run data
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const meta = JSON.parse(fs.readFileSync(path.join(root, "data/changbi-meta.json"), "utf8"));
 
 // Original language / country for translated titles (editorial annotation).
@@ -23,7 +24,6 @@ const ORIGIN = {
 };
 
 const LANG_CODE = { 한국어: "KO", 영어: "EN", 스페인어: "ES", 프랑스어: "FR", 독일어: "DE", 일본어: "JA", 이탈리아어: "IT", 한문: "LZH" };
-const LANG_BY_CODE = Object.fromEntries(Object.entries(LANG_CODE).map(([k, v]) => [v, k]));
 
 /**
  * Parse the press-release "원제" field into editions.
@@ -112,7 +112,6 @@ const out = meta.map((m) => {
   const year = Number((m.pubMonth || "").slice(0, 4)) || null;
   const translated = Boolean(m.originalTitle || m.translator || /옮김|옮/.test(m.credit || ""));
   const origin = translated ? ORIGIN[m.id] ?? [null, null] : ["한국어", "대한민국"];
-  const year0 = Number((m.pubMonth || "").slice(0, 4)) || null;
   const parsed = parseOriginal(m.originalTitle);
   // Editions of the work. The Changbi Korean edition is the one archived cover;
   // other editions are known from the bibliographic data but have no image yet.
@@ -128,8 +127,8 @@ const out = meta.map((m) => {
     }
   }
   editions.push({
-    key: `ko-${year0 ?? "na"}`, kind: translated ? "translation" : "original", lang: "KO", country: "대한민국",
-    title: null, year: year0, publisher: m.imprint || "창비", translator: m.translator || null, format: m.format || null, cover: true,
+    key: `ko-${year ?? "na"}`, kind: translated ? "translation" : "original", lang: "KO", country: "대한민국",
+    title: null, year, publisher: m.imprint || "창비", translator: m.translator || null, format: m.format || null, cover: true,
   });
   return {
     id: m.id.replace(/[^A-Za-z0-9]+/g, "-").replace(/-jpg$/, ""),
@@ -173,5 +172,4 @@ const out = meta.map((m) => {
 out.sort((a, b) => (b.year ?? 0) * 100 + (b.month ?? 0) - ((a.year ?? 0) * 100 + (a.month ?? 0)));
 fs.mkdirSync(path.join(root, "src/data"), { recursive: true });
 fs.writeFileSync(path.join(root, "src/data/artworks.json"), JSON.stringify(out));
-void LANG_BY_CODE;
 console.log("artworks:", out.length, "families:", Object.entries(out.reduce((a, x) => ((a[x.family] = (a[x.family] || 0) + 1), a), {})));

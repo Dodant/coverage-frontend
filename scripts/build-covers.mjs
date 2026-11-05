@@ -6,9 +6,10 @@
 // Width is capped, never enlarged, so the 1400 variant of a smaller original keeps its own size and proportions.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = process.env.COVERS_SRC ?? path.join(root, "../changbi-press/covers");
 const out = path.join(root, "public/covers");
 const force = process.argv.includes("--force");

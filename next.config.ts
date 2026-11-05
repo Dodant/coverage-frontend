@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   devIndicators: false,
-  // Covers are pre-sized WebP files in /public/covers (see scripts/build-data.mjs),
+  // Covers are pre-sized WebP files in /public/covers (see scripts/build-covers.mjs, `npm run covers`),
   // so the runtime image optimizer is not needed.
   images: { unoptimized: true },
   // Playwright runs its own dev server in .next-e2e so it never collides with `npm run dev`.
@@ -15,8 +15,9 @@ const nextConfig: NextConfig = {
     return config;
   },
   async rewrites() {
-    // Forward /api to coverage-backend in development (the backend has no CORS config).
-    const api = process.env.COVERAGE_API_ORIGIN;
+    // Forward /api to coverage-backend (it has no CORS config). The target is fixed at `next build`
+    // (rewrites live in the routes manifest), and a trailing slash would double the "/".
+    const api = process.env.COVERAGE_API_ORIGIN?.replace(/\/$/, "");
     return api ? [{ source: "/api/:path*", destination: `${api}/api/:path*` }] : [];
   },
 };
