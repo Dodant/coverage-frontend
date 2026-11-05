@@ -109,6 +109,39 @@ test("a transient refresh failure keeps the session", async ({ page, request }) 
   expect(await page.evaluate((k) => localStorage.getItem(k), SESSION_KEY)).not.toBeNull();
 });
 
+test("a rejected token is not retried when the refresh service is down", async ({ page }) => {
+  await page.goto("/login");
+  // The access token is no longer accepted and the refresh endpoint is down: the session is kept, so this is not a sign-out.
+  await page.evaluate((k) => localStorage.setItem(k, JSON.stringify({ accessToken: "at.broken", refreshToken: "rt.any", expiresAt: Date.now() + 86_400_000, user: { id: "x", email: "x@x.test", displayName: "x", role: "MEMBER" } })), SESSION_KEY);
+  await page.route("**/api/auth/refresh", (r) => r.fulfill({ status: 503, contentType: "application/json", body: "{}" }));
+  await page.goto("/account");
+  await expect(page.locator("main").getByRole("alert")).toBeVisible();
+  await expect(page).toHaveURL(/\/account$/);
+  expect(await page.evaluate((k) => localStorage.getItem(k), SESSION_KEY)).not.toBeNull();
+});
+
+test("a request is never replayed under an account another tab signed in to", async ({ page, request }) => {
+  const res = await request.post(`${API}/api/auth/signup`, { data: { email: `other-${Date.now()}@coverage.test`, password: "coverage123", displayName: "Other", role: "MEMBER" } });
+  expect(res.ok()).toBeTruthy();
+  const other = await res.json();
+  await page.goto("/login");
+  await page.evaluate((k) => localStorage.setItem(k, JSON.stringify({ accessToken: "at.broken", refreshToken: "rt.any", expiresAt: Date.now() + 86_400_000, user: { id: "x", email: "x@x.test", displayName: "x", role: "MEMBER" } })), SESSION_KEY);
+  const sent: string[] = [];
+  page.on("request", (r) => { if (r.url().includes("/api/users/me")) sent.push(r.headers().authorization ?? ""); });
+  // While the first profile request is out, another tab signs in as someone else.
+  await page.route("**/api/users/me", async (r) => {
+    if (r.request().headers().authorization === "Bearer at.broken") {
+      await page.evaluate(([k, a]) => localStorage.setItem(k, JSON.stringify({ accessToken: a.accessToken, refreshToken: a.refreshToken, expiresAt: Date.now() + 86_400_000, user: a.user })), [SESSION_KEY, other] as const);
+      return r.fulfill({ status: 401, contentType: "application/json", body: "{}" });
+    }
+    return r.continue();
+  });
+  await page.goto("/account");
+  await expect(page).toHaveURL(/\/login/);
+  expect(sent.slice(0, 1)).toEqual(["Bearer at.broken"]);
+  expect(sent.slice(1), "the 401'd request was retried with the other account's token").not.toContain(`Bearer ${other.accessToken}`);
+});
+
 test("a private room is closed to guests and to other members", async ({ page, browser, request }) => {
   const owner = await (await request.post(`${API}/api/auth/signup`, { data: { email: `e2e-${Date.now()}-owner@coverage.test`, password: "coverage123", displayName: "E2E Owner", role: "MEMBER" } })).json();
   const h = { Authorization: `Bearer ${owner.accessToken}` };

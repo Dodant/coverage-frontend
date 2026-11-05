@@ -72,9 +72,11 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
   if (body !== undefined) h.set("Content-Type", "application/json");
 
   let token: string | null = null;
+  let sender: string | undefined;
   if (isClient && auth !== "none") {
-    const { freshAccessToken } = await import("./session");
+    const { freshAccessToken, getSession } = await import("./session");
     token = await freshAccessToken();
+    sender = getSession()?.user.id;
     if (!token && auth === "required") throw new ApiError(401, "UNAUTHORIZED", "Login required");
     if (token) h.set("Authorization", `Bearer ${token}`);
   }
@@ -104,9 +106,13 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
     // Another caller may already have rotated the pair while this request was out: use that, don't spend a refresh.
     const now = getSession();
     const s = now && now.accessToken !== token ? now : await refreshOnce();
-    if (s && s.accessToken !== token) {
+    // Never replay a request under an account another tab signed in to meanwhile.
+    if (s && s.user.id === sender && s.accessToken !== token) {
       h.set("Authorization", `Bearer ${s.accessToken}`);
       res = await doFetch();
+    } else if (s && s.user.id === sender) {
+      // The refresh could not run (5xx, network) and kept the session: this is an outage, not a sign-out.
+      throw new ApiError(503, "REFRESH_UNAVAILABLE", "Couldn't renew the session");
     }
   }
 

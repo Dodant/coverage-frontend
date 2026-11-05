@@ -101,6 +101,8 @@ export function refreshOnce(): Promise<Session | null> {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: seen }),
+        // A hung backend must not hold the cross-tab lock (and every tab's next request) forever.
+        signal: AbortSignal.timeout(10_000),
       });
       // Signed out or switched account while the request was out: its answer is no longer ours to store.
       if (reread()?.refreshToken !== seen) return current;
