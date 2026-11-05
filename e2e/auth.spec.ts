@@ -15,7 +15,7 @@ test("signup shows the backend's field error on the field", async ({ page }) => 
 });
 
 test("join, like a cover, hang it in a new exhibition, share the room", async ({ page, context, browser, request }) => {
-  await page.goto("/signup?next=//example.com/"); // an off-site `next` must not be followed
+  await page.goto("/signup?next=/%09/example.com/"); // off-site `next` (tab-stripped to //example.com by URL parsing) must not be followed
   await page.getByLabel("Name · 이름").fill("E2E Curator");
   await page.getByLabel("Email · 이메일").fill(`e2e-${Date.now()}@coverage.test`);
   await page.getByLabel("Password · 비밀번호").fill("coverage123");

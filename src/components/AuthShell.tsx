@@ -1,7 +1,17 @@
 import { AuroraBackground } from "./AuroraBackground";
 
-/** Where to go after signing in: only a path on this site. `//host` and `\\host` would leave it, so they fall back to "/". */
-export const safeNext = (raw: string | null) => (raw && /^\/(?![\/\\])/.test(raw) ? raw : "/");
+/**
+ * Where to go after signing in: only a path on this site. The value is parsed the way the browser will
+ * parse it (so `//host`, `\\host`, `/\t/host` and `javascript:` all resolve off-site) and reduced to its path.
+ * A fixed base keeps the result identical on server and client.
+ */
+export function safeNext(raw: string | null): string {
+  if (!raw) return "/";
+  try {
+    const u = new URL(raw, "http://coverage.local");
+    return u.origin === "http://coverage.local" ? u.pathname + u.search + u.hash : "/";
+  } catch { return "/"; }
+}
 
 /** Shared frame for login / signup: a quiet aurora room with one form. */
 export function AuthShell({ kicker, title, children, aside }: { kicker: string; title: React.ReactNode; children: React.ReactNode; aside?: React.ReactNode }) {
