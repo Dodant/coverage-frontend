@@ -7,12 +7,14 @@ import type { Artwork } from "@/lib/artworks";
 import { editionImage, trimMm } from "@/lib/artworks";
 import { EditionPlaceholder } from "./EditionPlaceholder";
 import { editionLabel } from "./EditionsRail";
+import { useDialogFocus } from "./useDialogFocus";
 
 /** Every edition of a work hung side by side at the same height, so only the design is compared. */
 export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void }) {
+  const root = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
+  useDialogFocus(root, close);
   useEffect(() => {
-    close.current?.focus();
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
     const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -27,6 +29,7 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
 
   return createPortal(
     <motion.div
+      ref={root}
       role="dialog" aria-modal="true" aria-label={`Compare editions of ${a.title}`}
       className="fixed inset-0 z-[80] flex flex-col overflow-y-auto bg-[#141217] text-snow"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
@@ -40,7 +43,9 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
           <button ref={close} type="button" onClick={onClose} className="label h-11 rounded-full bg-snow px-4 text-night">Close ✕</button>
         </div>
       </div>
-      <div className="wrap mt-10 flex w-full flex-1 items-end justify-center gap-[clamp(1rem,4vw,3.5rem)] overflow-x-auto pb-4">
+      {/* The row centres itself with auto margins, which drop to 0 when it overflows — so the first edition stays reachable. */}
+      <div className="wrap mt-10 flex w-full flex-1 items-end overflow-x-auto pb-4">
+        <div className="mx-auto flex w-max items-end gap-[clamp(1rem,4vw,3.5rem)]">
         {a.editions.map((e, i) => {
           const mm = known[i];
           const im = missing.has(e.key) ? null : editionImage(a, e, 1400);
@@ -59,6 +64,7 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
             </figure>
           );
         })}
+        </div>
       </div>
       <p className="label wrap w-full pb-6 pt-4 opacity-60">
         모든 판을 같은 높이로 맞춰 표지 디자인만 비교합니다 · Esc to close

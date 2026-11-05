@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Artwork } from "@/lib/artworks";
 import { src } from "@/lib/artworks";
+import { useDialogFocus } from "./useDialogFocus";
 
 /** Full-screen inspection: wheel / buttons / keys to zoom, drag to pan. */
 export function InspectOverlay({ a, onClose }: { a: Artwork; onClose: () => void }) {
@@ -15,8 +16,8 @@ export function InspectOverlay({ a, onClose }: { a: Artwork; onClose: () => void
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const zoom = useCallback((d: number) => setScale((s) => { const n = Math.min(5, Math.max(1, +(s + d).toFixed(2))); if (n === 1) setPos({ x: 0, y: 0 }); return n; }), []);
 
+  useDialogFocus(root, closeBtn);
   useEffect(() => {
-    closeBtn.current?.focus();
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
     const key = (e: KeyboardEvent) => {

@@ -49,3 +49,19 @@ test("artwork: Compare hangs every edition at one height; Escape closes it", asy
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
 });
+
+test("artwork: Compare keeps the first edition reachable when the row overflows, traps Tab and returns focus", async ({ page, request }) => {
+  await page.setViewportSize({ width: 420, height: 800 });
+  await page.goto(`/artwork/${await routeIdFor(request, WORK)}`);
+  const opener = page.getByRole("button", { name: /Compare \d+ editions/ });
+  await opener.click();
+  const dialog = page.getByRole("dialog", { name: /^Compare editions/ });
+  const first = dialog.locator("figure").first();
+  await expect(first).toBeVisible();
+  expect((await first.boundingBox())!.x, "the first edition starts inside the scrollable area").toBeGreaterThanOrEqual(0);
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null), "Tab stays inside the dialog").toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+});
