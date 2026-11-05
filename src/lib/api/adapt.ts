@@ -9,11 +9,14 @@ import type { BookCoverResponse, BrowseResultItem, OriginalBookResponse, SearchR
 type Book = OriginalBookResponse | TranslatedBookResponse;
 const isOriginal = (b: Book): b is OriginalBookResponse => "translationCount" in b;
 
+/** Backend ids and share tokens are UUIDs; anything else never reaches the API as a path segment. */
+export const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
 /** Route id for a book: "o-<uuid>" (original) or "t-<uuid>" (translation). */
 export const routeId = (kind: "ORIGINAL" | "TRANSLATED", uuid: string) => `${kind === "ORIGINAL" ? "o" : "t"}-${uuid}`;
 export function parseRouteId(id: string): { kind: "ORIGINAL" | "TRANSLATED"; uuid: string } | null {
   const m = id.match(/^([ot])-(.+)$/);
-  return m ? { kind: m[1] === "o" ? "ORIGINAL" : "TRANSLATED", uuid: m[2] } : null;
+  return m && isUuid(m[2]) ? { kind: m[1] === "o" ? "ORIGINAL" : "TRANSLATED", uuid: m[2] } : null;
 }
 
 /** Backend genres are free text (e.g. "소설", "Fiction"); bucket them into the UI's genres. */

@@ -1,5 +1,8 @@
 import { AuroraBackground } from "./AuroraBackground";
 
+/** Where to go after signing in: only a path on this site. `//host` and `\\host` would leave it, so they fall back to "/". */
+export const safeNext = (raw: string | null) => (raw && /^\/(?![\/\\])/.test(raw) ? raw : "/");
+
 /** Shared frame for login / signup: a quiet aurora room with one form. */
 export function AuthShell({ kicker, title, children, aside }: { kicker: string; title: React.ReactNode; children: React.ReactNode; aside?: React.ReactNode }) {
   return (

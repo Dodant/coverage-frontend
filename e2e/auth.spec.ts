@@ -15,12 +15,13 @@ test("signup shows the backend's field error on the field", async ({ page }) => 
 });
 
 test("join, like a cover, hang it in a new exhibition, share the room", async ({ page, context, browser, request }) => {
-  await page.goto("/signup");
+  await page.goto("/signup?next=//example.com/"); // an off-site `next` must not be followed
   await page.getByLabel("Name · 이름").fill("E2E Curator");
   await page.getByLabel("Email · 이메일").fill(`e2e-${Date.now()}@coverage.test`);
   await page.getByLabel("Password · 비밀번호").fill("coverage123");
   await page.getByRole("button", { name: /Create account/ }).click();
   await expect(page.getByRole("link", { name: /^Account — E2E Curator/ })).toBeVisible();
+  await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/$/);
 
   // Like, and the state survives a reload (status comes from the server).
   await page.goto(`/artwork/${await routeIdFor(request, "입속의 새")}`);

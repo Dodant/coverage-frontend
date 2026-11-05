@@ -7,7 +7,7 @@ import { signup } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { setSessionFromAuth } from "@/lib/api/session";
 import type { SignupRole } from "@/lib/api/types";
-import { AuthShell, Field } from "@/components/AuthShell";
+import { AuthShell, Field, safeNext } from "@/components/AuthShell";
 
 const ROLES: { id: SignupRole; en: string; kr: string }[] = [
   { id: "MEMBER", en: "Reader", kr: "일반 회원" },
@@ -18,7 +18,7 @@ const ROLES: { id: SignupRole; en: string; kr: string }[] = [
 
 export function SignupForm() {
   const router = useRouter();
-  const next = useSearchParams().get("next") || "/";
+  const next = safeNext(useSearchParams().get("next"));
   const [displayName, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +43,7 @@ export function SignupForm() {
     setBusy(true);
     try {
       setSessionFromAuth(await signup({ email, password, displayName: displayName.trim(), role }));
-      router.replace(next.startsWith("/") ? next : "/");
+      router.replace(next);
     } catch (err) {
       if (err instanceof ApiError) {
         // Duplicate email is a 400 with details.email (not 409).

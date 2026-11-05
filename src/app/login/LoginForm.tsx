@@ -6,11 +6,11 @@ import { useState } from "react";
 import { login } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { setSessionFromAuth } from "@/lib/api/session";
-import { AuthShell, Field } from "@/components/AuthShell";
+import { AuthShell, Field, safeNext } from "@/components/AuthShell";
 
 export function LoginForm() {
   const router = useRouter();
-  const next = useSearchParams().get("next") || "/";
+  const next = safeNext(useSearchParams().get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -21,7 +21,7 @@ export function LoginForm() {
     setBusy(true); setErrors({});
     try {
       setSessionFromAuth(await login({ email, password }));
-      router.replace(next.startsWith("/") ? next : "/");
+      router.replace(next);
     } catch (err) {
       if (err instanceof ApiError) {
         // Wrong email/password comes back as 400 with details.credentials; a locked account as 401.

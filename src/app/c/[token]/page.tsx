@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { USE_API } from "@/lib/api/config";
 import { ApiError } from "@/lib/api/client";
+import { isUuid } from "@/lib/api/adapt";
 import { getSharedCollection } from "@/lib/api/endpoints";
 import { SharedRoom } from "./SharedRoom";
 
 async function load(token: string) {
-  if (!USE_API) return null;
+  if (!USE_API || !isUuid(token)) return null;
   try { return await getSharedCollection(token); } catch (e) { if (e instanceof ApiError && (e.isNotFound || e.status === 400)) return null; throw e; }
 }
 
