@@ -6,7 +6,7 @@ import { ArtworkCard } from "./ArtworkCard";
 import { EASE_OUT } from "./motion";
 
 // Every cover in a row shares one height; widths follow each cover's own proportions.
-const ROW = {
+export const ROW = {
   compact: { h: "clamp(7.5rem, 12vw, 11rem)", gap: "gap-x-3 gap-y-8 md:gap-x-5" },
   regular: { h: "clamp(11.5rem, 19vw, 17.5rem)", gap: "gap-x-5 gap-y-12 md:gap-x-8" },
   large: { h: "clamp(17rem, 30vw, 27rem)", gap: "gap-x-6 gap-y-16 md:gap-x-12" },

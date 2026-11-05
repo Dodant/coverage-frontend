@@ -7,10 +7,11 @@ import { browseBy, browseLatest, getTranslated, search } from "@/lib/api/endpoin
 import { fromHit } from "@/lib/api/adapt";
 import { ApiError } from "@/lib/api/client";
 import type { SortOption } from "@/lib/api/types";
-import { ArtworkGrid } from "@/components/ArtworkGrid";
+import { ArtworkGrid, ROW } from "@/components/ArtworkGrid";
 import { EditorialHeading } from "@/components/EditorialHeading";
 
 type Facet = "latest" | "country" | "year" | "genre";
+const FACETS: Facet[] = ["latest", "genre", "country", "year"];
 type Density = "compact" | "regular" | "large";
 const PAGE = 30;
 const LANGS = ["ko", "en", "ja", "zh", "fr", "de", "es", "it"];
@@ -39,7 +40,7 @@ export function ArchiveExplorerApi() {
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const dq = useDeferredValue(q.trim());
-  const [facet, setFacet] = useState<Facet>((params.get("by") as Facet) || "latest");
+  const [facet, setFacet] = useState<Facet>(() => { const by = params.get("by"); return FACETS.includes(by as Facet) ? (by as Facet) : "latest"; });
   const [facetValue, setFacetValue] = useState(params.get("v") ?? "");
   const [country, setCountry] = useState("");
   const [lang, setLang] = useState("");
@@ -91,7 +92,17 @@ export function ArchiveExplorerApi() {
     }
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { setItems([]); fetchPage(0); }, [fetchPage]);
+  useEffect(() => { setItems([]); setPage(0); setPages(1); setTotal(null); fetchPage(0); }, [fetchPage]);
+
+  // Keep the address shareable (the mock-mode explorer does the same); Next syncs replaceState with useSearchParams.
+  useEffect(() => {
+    const u = new URLSearchParams();
+    if (q) u.set("q", q);
+    if (facet !== "latest") { u.set("by", facet); if (facetValue) u.set("v", facetValue); }
+    if (genre) u.set("genre", genre);
+    const s = u.toString();
+    window.history.replaceState(null, "", s ? `?${s}` : window.location.pathname);
+  }, [q, facet, facetValue, genre]);
 
   // Infinite scroll.
   const sentinel = useRef<HTMLDivElement>(null);
@@ -195,7 +206,7 @@ export function ArchiveExplorerApi() {
             <>
               <div role="radiogroup" aria-label="Browse by" className="flex flex-wrap items-center gap-1.5">
                 <span className="label mr-1 text-ash">Browse</span>
-                {(["latest", "genre", "country", "year"] as Facet[]).map((f) => (
+                {FACETS.map((f) => (
                   <button key={f} role="radio" aria-checked={facet === f} onClick={() => setFacet(f)} className={pill(facet === f)}>
                     {{ latest: "Latest · 최신", genre: "Genre · 장르", country: "Country · 나라", year: "Year · 연도" }[f]}
                   </button>
@@ -230,7 +241,7 @@ export function ArchiveExplorerApi() {
           <ArtworkGrid works={shown} density={density} stack={unit === "works"} />
         ) : loading ? (
           <div aria-busy="true" className="flex flex-wrap gap-6">
-            {Array.from({ length: 12 }).map((_, i) => <div key={i} className="h-[clamp(11.5rem,19vw,17.5rem)] w-[calc(clamp(11.5rem,19vw,17.5rem)*0.667)] animate-pulse bg-ink/10" />)}
+            {Array.from({ length: 12 }).map((_, i) => <div key={i} className="animate-pulse bg-ink/10" style={{ height: ROW[density].h, width: `calc(${ROW[density].h} * 0.667)` }} />)}
           </div>
         ) : (
           <div className="py-24 text-center">
