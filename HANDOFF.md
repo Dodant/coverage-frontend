@@ -51,7 +51,7 @@
 - 브라우저 검증 시 Playwright MCP 산출물은 `.playwright-mcp/`(gitignore, watcher 제외)
 
 ## 2026-11-05 리뷰 (`/review`, PR #1 기준 b6143fd)
-- 자동 수정 68건 + 문서 10건이 **커밋 전 작업 트리**에 있음(세션 JSON 검증, 목업 API 계약 불일치 4건, `?by=` 검증·URL 동기화, 전시실 fetch alive 가드·더블클릭 방지, 좋아요 경합, "Nonfiction"→fiction·언어 표기 오류, 로그인 뒤 /login 재진입 방지, 서버 fetch 10초 타임아웃, 죽은 코드·stale 문서 정리 등). tsc·lint·E2E 10건·mock 빌드 통과 확인 후 중단됨. `git diff`로 보고 논리 단위로 커밋할 것
+- 자동 수정 68건 + 문서 10건은 `526f469`…`d5eb565` 9개 커밋으로 반영됨(세션 JSON 검증, 목업 API 계약 불일치 4건, `?by=` 검증·URL 동기화, 전시실 fetch alive 가드·더블클릭 방지, 좋아요 경합, "Nonfiction"→fiction·언어 표기 오류, 로그인 뒤 /login 재진입 방지, 서버 fetch 10초 타임아웃, 죽은 코드·stale 문서 정리 등). tsc·lint·E2E 10건·mock 빌드 통과 확인
 - 사용자가 승인했지만 **아직 안 한 수정**(리뷰어 발견 순, 자세한 근거는 리뷰 보고): 세션 5xx 유지·늦은 refresh 응답 무시·계정 전환 재로드·401 재시도(`session.ts`/`client.ts`/`AccountView`), 탭 간 refresh Web Locks, 보안 헤더 + `getSharedCollection` no-store, 전시실 높이 통일(`CollectionGallery` rowHeight, 팬 2곳, `EditionsFan` 측정 비율, `ArtworkCard` 하이드레이션 전 로드), Compare 오버플로 + Compare/Inspect 포커스 트랩·복귀, 서문 자동저장 덮어쓰기 제거 + 추가 시 선택 판본 기억, `EditionsRail` Item 호이스팅 + 번역 히트 중복 호출 제거, Pretendard 동적 서브셋, 목업 데이터 번들 분리, 목업 모드 E2E 프로젝트 + covers 사전조건, 컬렉션 100개 초과 페이지네이션
 - 그 수정들을 지키는 **테스트는 먼저 써 두었고** `.gstack/tmp/review-phase1-tests.patch`에 있음(`git apply`). 수정 전에는 의도적으로 빨간 테스트가 섞여 있으니 수정과 함께 적용할 것
 - Skip으로 기록: 판본 팬 Escape(window keydown) · reduced-motion MotionConfig · 홈 ISR 오류 캐시 · advisory 정리
