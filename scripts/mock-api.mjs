@@ -52,7 +52,7 @@ function cover(seed, a, { image, lang, country, year }) {
     height: image ? a.h : null,
     fileSize: null,
     coverType: "FRONT",
-    imageSource: image ? "PUBLISHER" : null,
+    imageSource: image ? "OTHER" : null,
     sourceUrl: null,
     sourceName: image ? "창비" : null,
     dominantColor: image ? a.key : null,
@@ -252,7 +252,7 @@ route("POST", "/auth/signup", async (req) => {
 route("POST", "/auth/login", async (req) => {
   const b = await readJson(req);
   const u = byEmail.get(String(b.email ?? "").toLowerCase());
-  if (!u || u.password !== b.password) throw bad("이메일 또는 비밀번호가 올바르지 않습니다");
+  if (!u || u.password !== b.password) throw bad("이메일 또는 비밀번호가 올바르지 않습니다", { credentials: "이메일 또는 비밀번호가 올바르지 않습니다" });
   u.lastLoginAt = now();
   return [200, issue(u)];
 });
@@ -265,8 +265,9 @@ route("POST", "/auth/refresh", async (req) => {
 });
 route("POST", "/auth/logout", async (req) => {
   const b = await readJson(req);
+  if (!b.refreshToken) throw bad("입력값이 올바르지 않습니다", { refreshToken: "필수입니다" });
   refreshTokens.delete(b.refreshToken);
-  return [200, undefined];
+  return [204, undefined];
 });
 
 // ── Users ─────────────────────────────────────────────────────────────────
@@ -326,7 +327,7 @@ route("GET", "/books/original/{id}/translations", async (_req, _q, p) => {
   if (!originals.has(p.id)) throw notFound("OriginalBook", p.id);
   return [200, [...translated.values()].filter((t) => t.originalBookId === p.id)];
 });
-route("GET", "/covers/{id}", async (_req, _q, p) => { const c = covers.get(p.id); if (!c) throw notFound("BookCover", p.id); return [200, c]; });
+route("GET", "/covers/{id}", async (_req, _q, p) => { const c = covers.get(p.id); if (!c || c.hidden) throw notFound("BookCover", p.id); return [200, c]; });
 
 // ── Likes ─────────────────────────────────────────────────────────────────
 const LIKE_TYPES = ["ORIGINAL_COVER", "TRANSLATED_COVER", "REDESIGN"];
@@ -423,9 +424,15 @@ route("POST", "/collections/{id}/duplicate", async (req, _q, p) => {
   return [201, { ...collectionView(c), items: [], itemCount: 0 }]; // backend quirk: the copy comes back empty
 });
 
+// ── Request log (test-only): lets a test prove that a guarded id never produced a backend call ──
+const requestLog = [];
+route("GET", "/__requests", async () => [200, requestLog.slice()]);
+route("POST", "/__requests/reset", async () => { requestLog.length = 0; return [204, undefined]; });
+
 // ── Server ────────────────────────────────────────────────────────────────
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, ORIGIN);
+  if (!url.pathname.startsWith("/api/__requests")) { requestLog.push(req.url); if (requestLog.length > 1000) requestLog.shift(); }
   if (req.method === "GET" && url.pathname.startsWith("/files/covers/")) {
     const file = join(ROOT, "public", url.pathname.slice("/files".length));
     if (!file.startsWith(join(ROOT, "public", "covers")) || !existsSync(file)) return send(res, 404, { code: "NOT_FOUND", message: "file", timestamp: now() });
