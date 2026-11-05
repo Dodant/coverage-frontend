@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Artwork } from "@/lib/artworks";
 import { likeStatus, likeTypeFor, toggleLike } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
@@ -23,19 +23,22 @@ export function LikeButton({ art, className = "" }: { art: Artwork; className?: 
   const [count, setCount] = useState(r.likeCount);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const touched = useRef(false); // a click beats a status reply that is still in flight
 
   useEffect(() => {
     setCount(r.likeCount);
     setLiked(false);
+    touched.current = false;
     if (!session || !r.coverId) return;
     let alive = true;
-    likeStatus(type, r.coverId).then((s) => { if (alive) { setLiked(s.liked); setCount(s.likeCount); } }).catch(() => {});
+    likeStatus(type, r.coverId).then((s) => { if (alive && !touched.current) { setLiked(s.liked); setCount(s.likeCount); } }).catch(() => {});
     return () => { alive = false; };
   }, [session?.user.id, r.coverId, type, r.likeCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const click = async () => {
     if (!r.coverId || busy) return;
     if (!session) { router.push(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+    touched.current = true;
     setBusy(true); setError(null);
     // Optimistic; the server's answer wins.
     setLiked((v) => !v); setCount((c) => c + (liked ? -1 : 1));

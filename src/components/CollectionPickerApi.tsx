@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Artwork } from "@/lib/artworks";
 import { addCollectionItem, createCollection, getCollection, myCollections, removeCollectionItem } from "@/lib/api/endpoints";
-import type { CollectionItemType } from "@/lib/api/types";
+import type { CollectionItemType, CollectionResponse } from "@/lib/api/types";
 import { useSession } from "@/lib/api/session";
 import { rememberCover } from "@/lib/api/coverIndex";
 import { EASE_OUT } from "./motion";
@@ -31,7 +31,7 @@ export function CollectionPickerApi({ art, className = "" }: { art: Artwork; cla
       try {
         const page = await myCollections();
         // Membership needs each collection's items (no "contains" endpoint).
-        const full = await Promise.all(page.content.map((c) => getCollection(c.id).catch(() => null)));
+        const full = await Promise.all(page.content.map((c) => (c.itemCount ? getCollection(c.id).catch(() => null) : null)));
         if (alive) setRows(page.content.map((c, i) => ({ id: c.id, name: c.name, has: Boolean(full[i]?.items.some((x) => x.itemId === r.coverId)) })));
       } catch { if (alive) setRows([]); }
     })();
@@ -62,14 +62,21 @@ export function CollectionPickerApi({ art, className = "" }: { art: Artwork; cla
   const create = async () => {
     if (!r.coverId || busy) return;
     setBusy(true);
+    let c: CollectionResponse | null = null;
     try {
-      const c = await createCollection(name.trim() || "Untitled Exhibition");
-      await addCollectionItem(c.id, itemType, r.coverId);
-      rememberCover(r.coverId, art.id, art.title);
-      setRows((rs) => [{ id: c.id, name: c.name, has: true }, ...(rs ?? [])]);
+      const made = await createCollection(name.trim() || "Untitled Exhibition");
+      c = made;
       setName("");
-      note(`Opened “${c.name}”`);
-    } catch { note("실패했습니다 · failed"); }
+      await addCollectionItem(made.id, itemType, r.coverId);
+      rememberCover(r.coverId, art.id, art.title);
+      setRows((rs) => [{ id: made.id, name: made.name, has: true }, ...(rs ?? [])]);
+      note(`Opened “${made.name}”`);
+    } catch {
+      // The room may exist although the cover was not hung in it — list it so a retry does not open another.
+      const made = c;
+      if (made) { setRows((rs) => [{ id: made.id, name: made.name, has: false }, ...(rs ?? [])]); note(`“${made.name}” opened · cover not added`); }
+      else note("실패했습니다 · failed");
+    }
     finally { setBusy(false); }
   };
 

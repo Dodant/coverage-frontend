@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LayoutGroup, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CollectionGallery, type CollectionView } from "@/components/CollectionGallery";
 import { AuroraBackground } from "@/components/AuroraBackground";
 import { EASE_OUT } from "@/components/motion";
@@ -40,12 +40,16 @@ export function CollectionRoomApi({ id }: { id: string }) {
     if (!hydrated) return;
     if (!session) { setFailure("auth"); return; }
     setFailure(null);
-    getCollection(id).then(setC).catch((e) => {
+    setC(null);
+    let alive = true;
+    getCollection(id).then((r) => { if (alive) setC(r); }).catch((e) => {
+      if (!alive) return;
       if (e instanceof ApiError && e.isAuth) setFailure("auth");
       else if (e instanceof ApiError && e.isNotFound) setFailure("gone");
       else if (e instanceof ApiError && e.status === 400) setFailure("private");
       else setFailure("error");
     });
+    return () => { alive = false; };
     // Only the login identity matters here, not token rotation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, id, session?.user.id]);
@@ -74,9 +78,12 @@ export function Room({ c, setC, editable, shared = false }: { c: CollectionRespo
   useEffect(() => { try { const v = localStorage.getItem("coverage:view") as CollectionView | null; if (v) setView(v); } catch {} }, []);
   const choose = (v: CollectionView) => { setView(v); try { localStorage.setItem("coverage:view", v); } catch {} };
 
+  const inflight = useRef(false);
   const run = async (fn: () => Promise<CollectionResponse | void>) => {
+    if (inflight.current) return false; // one write at a time: a double click must not duplicate or delete twice
+    inflight.current = true;
     setStatus(null);
-    try { const r = await fn(); if (r && setC) setC(r); return true; } catch (e) { setStatus(msg(e)); return false; }
+    try { const r = await fn(); if (r && setC) setC(r); return true; } catch (e) { setStatus(msg(e)); return false; } finally { inflight.current = false; }
   };
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/c/${c.shareToken}` : `/c/${c.shareToken}`;
   const copy = async () => { try { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { setStatus(shareUrl); } };

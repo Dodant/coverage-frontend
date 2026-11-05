@@ -23,9 +23,11 @@ const msg = (e: unknown) => (e instanceof ApiError ? e.message : "연결할 수 
 
 /** A room's fanned preview: summaries carry no items, so each room is fetched on its own. */
 function RoomFan({ id }: { id: string }) {
-  const [c, setC] = useState<CollectionResponse | null>(null);
-  useEffect(() => { getCollection(id).then(setC).catch(() => {}); }, [id]);
-  const works = useCollectionWorks(c?.items);
+  const [c, setC] = useState<CollectionResponse | null | "failed">(null);
+  useEffect(() => { getCollection(id).then(setC).catch(() => setC("failed")); }, [id]);
+  const works = useCollectionWorks(c && c !== "failed" ? c.items : undefined, 5);
+  // A room whose fetch failed is not "empty" — leave the slot blank rather than claim it is.
+  if (c === "failed") return <div className="h-56 md:h-64" aria-hidden="true" />;
   return <CollectionFan works={works ?? []} href={`/collections/${id}`} />;
 }
 
@@ -34,6 +36,7 @@ export function CollectionsIndexApi() {
   const [hydrated, setHydrated] = useState(false);
   const [mine, setMine] = useState<CollectionSummaryResponse[] | null>(null);
   const [open, setOpen] = useState<CollectionSummaryResponse[] | null>(null);
+  const [openError, setOpenError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,7 +50,11 @@ export function CollectionsIndexApi() {
     myCollections().then((p) => setMine(p.content)).catch((e) => { setMine([]); setError(msg(e)); });
   }, [session]);
   useEffect(() => { if (hydrated) reload(); }, [hydrated, reload]);
-  useEffect(() => { publicCollections(0, 12).then((p) => setOpen(p.content)).catch(() => setOpen([])); }, []);
+  const loadOpen = useCallback(() => {
+    setOpenError(false); setOpen(null);
+    publicCollections(0, 12).then((p) => setOpen(p.content)).catch(() => { setOpen([]); setOpenError(true); });
+  }, []);
+  useEffect(() => { loadOpen(); }, [loadOpen]);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,6 +175,8 @@ export function CollectionsIndexApi() {
         </div>
         {open === null ? (
           <p className="label py-12 text-ash" aria-busy="true">Loading…</p>
+        ) : openError ? (
+          <p className="kr py-12 text-ash">공개 전시를 불러오지 못했습니다. <button type="button" onClick={loadOpen} className="underline underline-offset-4">다시 시도</button></p>
         ) : open.length === 0 ? (
           <p className="kr py-12 text-ash">아직 공개된 전시가 없습니다.</p>
         ) : (
