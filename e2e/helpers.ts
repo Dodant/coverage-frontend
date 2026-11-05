@@ -2,6 +2,17 @@ import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 /** The mock backend started by playwright.config.ts. */
 export const API = `http://localhost:${process.env.E2E_API_PORT ?? 4110}`;
+export const SESSION_KEY = "coverage:session";
+
+/** Logs in through the API and plants the session the way the app stores it. Returns the AuthResponse. */
+export async function signInAs(page: Page, request: APIRequestContext, creds: { email: string; password: string }) {
+  const res = await request.post(`${API}/api/auth/login`, { data: creds });
+  expect(res.ok()).toBeTruthy();
+  const auth = await res.json();
+  await page.goto("/login");
+  await page.evaluate(([k, a]) => localStorage.setItem(k, JSON.stringify({ accessToken: a.accessToken, refreshToken: a.refreshToken, expiresAt: Date.now() + 86_400_000, user: a.user })), [SESSION_KEY, auth] as const);
+  return auth;
+}
 
 /** Route id (`o-…` original / `t-…` translation) of the first search hit for `query`. */
 export async function routeIdFor(request: APIRequestContext, query: string) {

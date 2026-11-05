@@ -100,9 +100,11 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
 
   // Access token rejected (e.g. expired early) → refresh once and retry.
   if (res.status === 401 && isClient && token) {
-    const { refreshOnce } = await import("./session");
-    const s = await refreshOnce();
-    if (s) {
+    const { getSession, refreshOnce } = await import("./session");
+    // Another caller may already have rotated the pair while this request was out: use that, don't spend a refresh.
+    const now = getSession();
+    const s = now && now.accessToken !== token ? now : await refreshOnce();
+    if (s && s.accessToken !== token) {
       h.set("Authorization", `Bearer ${s.accessToken}`);
       res = await doFetch();
     }

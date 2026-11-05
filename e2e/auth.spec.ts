@@ -1,8 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { API, coverBoxes, expectUndistorted, routeIdFor } from "./helpers";
+import { API, SESSION_KEY, coverBoxes, expectUndistorted, routeIdFor, signInAs } from "./helpers";
 
 const DEMO = { email: "demo@coverage.test", password: "coverage123" };
-const SESSION_KEY = "coverage:session";
 
 test("signup shows the backend's field error on the field", async ({ page }) => {
   await page.goto("/signup");
@@ -69,4 +68,74 @@ test("an invalid access token is refreshed once and the request retried", async 
   const session = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)!), SESSION_KEY);
   expect(session.accessToken).not.toBe("at.broken");
   expect(session.refreshToken).not.toBe(auth.refreshToken); // refresh tokens are single-use, so the pair rotated
+});
+
+// safeNext: the login form only ever lands on this site, and never back on the sign-in / join form itself.
+for (const next of ["http://coverage.local//example.com/", "//example.com", "/login"]) {
+  test(`sign-in ignores an off-site or self-referential next: ${next}`, async ({ page }) => {
+    await page.goto(`/login?next=${encodeURIComponent(next)}`);
+    await page.getByLabel("Email · 이메일").fill(DEMO.email);
+    await page.getByLabel("Password · 비밀번호").fill(DEMO.password);
+    await page.getByRole("button", { name: /Sign in/ }).click();
+    await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/$/);
+  });
+}
+
+test("a wrong password shows the backend's credentials message", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email · 이메일").fill(DEMO.email);
+  await page.getByLabel("Password · 비밀번호").fill("nope-nope");
+  await page.getByRole("button", { name: /Sign in/ }).click();
+  // Scoped to the page body: Next keeps its own (empty) route announcer with role="alert" outside <main>.
+  await expect(page.locator("main").getByRole("alert")).toHaveText("이메일 또는 비밀번호가 올바르지 않습니다");
+  await expect(page).toHaveURL(/\/login/);
+});
+
+test("a dead session is cleared and sent to sign in", async ({ page }) => {
+  await page.goto("/login");
+  await page.evaluate((k) => localStorage.setItem(k, JSON.stringify({ accessToken: "at.broken", refreshToken: "rt.broken", expiresAt: Date.now() + 86_400_000, user: { id: "x", email: "x@x.test", displayName: "x", role: "MEMBER" } })), SESSION_KEY);
+  await page.goto("/account");
+  await expect(page).toHaveURL(/\/login\?next=(%2F|\/)account/); // GET /users/me 401 → refresh 400 → session over
+  expect(await page.evaluate((k) => localStorage.getItem(k), SESSION_KEY)).toBeNull();
+});
+
+test("a transient refresh failure keeps the session", async ({ page, request }) => {
+  const auth = await signInAs(page, request, DEMO);
+  // The access token is due for renewal, but the refresh endpoint is down for a moment.
+  await page.evaluate(([k, a]) => localStorage.setItem(k, JSON.stringify({ accessToken: a.accessToken, refreshToken: a.refreshToken, expiresAt: Date.now(), user: a.user })), [SESSION_KEY, auth] as const);
+  await page.route("**/api/auth/refresh", (r) => r.fulfill({ status: 503, contentType: "application/json", body: "{}" }));
+  await page.goto("/account");
+  await expect(page.getByLabel("Name · 이름")).toHaveValue("큐레이터"); // the still-valid access token is used as is
+  expect(await page.evaluate((k) => localStorage.getItem(k), SESSION_KEY)).not.toBeNull();
+});
+
+test("a private room is closed to guests and to other members", async ({ page, browser, request }) => {
+  const owner = await (await request.post(`${API}/api/auth/signup`, { data: { email: `e2e-${Date.now()}-owner@coverage.test`, password: "coverage123", displayName: "E2E Owner", role: "MEMBER" } })).json();
+  const h = { Authorization: `Bearer ${owner.accessToken}` };
+  const room = await (await request.post(`${API}/api/collections`, { headers: h, data: { name: "Private E2E", visibility: "LINK_ONLY" } })).json();
+
+  const guest = await (await browser.newContext()).newPage();
+  await guest.goto(`/c/${room.shareToken}`);
+  await expect(guest.getByRole("heading", { name: "Private E2E" })).toBeVisible();
+
+  // The moment it is private the share link is closed — no server-side cache may keep serving it.
+  await request.put(`${API}/api/collections/${room.id}`, { headers: h, data: { visibility: "PRIVATE" } });
+  expect((await guest.goto(`/c/${room.shareToken}`))?.status()).toBe(404);
+  await guest.goto(`/collections/${room.id}`);
+  await expect(guest.getByText("Members only, for now.")).toBeVisible();
+
+  await signInAs(page, request, DEMO);
+  await page.goto(`/collections/${room.id}`);
+  await expect(page.getByText("A private room.")).toBeVisible();
+});
+
+test("two tabs renewing the same token at once both stay signed in", async ({ page, request, context }) => {
+  const auth = await signInAs(page, request, DEMO);
+  // Due for renewal in both tabs: without a cross-tab lock the second refresh spends a used token and logs out.
+  await page.evaluate(([k, a]) => localStorage.setItem(k, JSON.stringify({ accessToken: a.accessToken, refreshToken: a.refreshToken, expiresAt: Date.now(), user: a.user })), [SESSION_KEY, auth] as const);
+  const other = await context.newPage();
+  await Promise.all([page.goto("/account"), other.goto("/account")]);
+  for (const p of [page, other]) await expect(p.getByLabel("Name · 이름")).toHaveValue("큐레이터");
+  const s = JSON.parse((await page.evaluate((k) => localStorage.getItem(k), SESSION_KEY))!);
+  expect(s.refreshToken).not.toBe(auth.refreshToken);
 });

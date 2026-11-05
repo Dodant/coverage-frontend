@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getMe, logout, updateMe } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { clearSession, getSession, updateSessionUser, useSession } from "@/lib/api/session";
@@ -19,14 +19,24 @@ export function AccountView() {
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Load the profile for whoever is signed in — again if another tab switches account.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  const uid = session?.user.id;
+  const leaving = useRef(false);
   useEffect(() => {
-    if (!getSession()) { router.replace("/login?next=/account"); return; }
-    getMe().then((m) => { setMe(m); setName(m.displayName); setWebsite(m.websiteUrl ?? ""); setPortfolio(m.portfolioUrl ?? ""); })
+    if (!hydrated || leaving.current) return;
+    if (!uid) { router.replace("/login?next=/account"); return; }
+    let alive = true;
+    setMe(null);
+    getMe().then((m) => { if (!alive) return; setMe(m); setName(m.displayName); setWebsite(m.websiteUrl ?? ""); setPortfolio(m.portfolioUrl ?? ""); })
       .catch((e) => {
+        if (!alive) return;
         if (e instanceof ApiError && e.isAuth) { router.replace("/login?next=/account"); return; }
         setErrors({ form: e instanceof ApiError && e.status === 0 ? "서버에 연결할 수 없습니다 · Can't reach the server." : "프로필을 불러오지 못했습니다 · Couldn't load your profile. 새로고침해 주세요." });
       });
-  }, [router]);
+    return () => { alive = false; };
+  }, [hydrated, uid, router]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +51,7 @@ export function AccountView() {
   };
 
   const signOut = async () => {
+    leaving.current = true; // the session is about to end on purpose: go home, not to sign-in
     const s = getSession();
     if (s) await logout(s.refreshToken).catch(() => {});
     clearSession();

@@ -10,7 +10,7 @@ import type { AuthResponse, AuthUserInfo } from "./types";
  * The backend authenticates with `Authorization: Bearer` only — no cookies — so tokens live in
  * localStorage. Refresh tokens are single-use: every refresh returns a new pair, and two
  * concurrent refreshes with the same token make one of them fail. `refreshOnce` therefore
- * shares one in-flight refresh across every caller (and across tabs via the storage event).
+ * shares one in-flight refresh across every caller, and a Web Lock serialises it across tabs.
  */
 export interface Session {
   accessToken: string;
@@ -75,34 +75,43 @@ export function useSession(): Session | null {
 // ── Single-flight refresh ────────────────────────────────────────────────
 let inflight: Promise<Session | null> | null = null;
 
-/** Exchange the refresh token for a new pair. Any 400 means the session is over. */
+/** Re-read localStorage: another tab may have rotated (or ended) the session. */
+function reread() { loaded = false; load(); return current; }
+
+/** Run `fn` while holding a cross-tab lock, so two tabs never spend the same single-use refresh token. */
+function withTabLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  return locks ? locks.request("coverage:refresh", fn) : fn();
+}
+
+/**
+ * Exchange the refresh token for a new pair, once across every caller and every tab.
+ * Only a definitive rejection (400/401) ends the session; a 5xx or network failure keeps it.
+ */
 export function refreshOnce(): Promise<Session | null> {
   if (inflight) return inflight;
-  const s = getSession();
-  if (!s) return Promise.resolve(null);
-  const usedToken = s.refreshToken;
-  inflight = (async () => {
+  if (!getSession()) return Promise.resolve(null);
+  const seen = current!.refreshToken;
+  inflight = withTabLock(async () => {
+    // A tab that held the lock before us may already have rotated the pair.
+    const s = reread();
+    if (!s || s.refreshToken !== seen) return s;
     try {
       const res = await fetch(`${apiBase()}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: usedToken }),
+        body: JSON.stringify({ refreshToken: seen }),
       });
-      if (!res.ok) {
-        // Another tab may have rotated the token meanwhile — accept its result instead of logging out.
-        loaded = false; load();
-        if (current && current.refreshToken !== usedToken) return current;
-        clearSession();
-        return null;
-      }
+      // Signed out or switched account while the request was out: its answer is no longer ours to store.
+      if (reread()?.refreshToken !== seen) return current;
+      if (res.status === 400 || res.status === 401) { clearSession(); return null; }
+      if (!res.ok) return current;
       setSessionFromAuth((await res.json()) as AuthResponse);
       return current;
     } catch {
       return getSession(); // network error: keep the session, let the caller fail normally
-    } finally {
-      inflight = null;
     }
-  })();
+  }).finally(() => { inflight = null; });
   return inflight;
 }
 
