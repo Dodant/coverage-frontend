@@ -8,13 +8,13 @@ import { editionImage, ownEdition } from "@/lib/artworks";
 import { EditionPlaceholder } from "./EditionPlaceholder";
 import { EASE_OUT } from "./motion";
 
-const GAP = 10;
-const PAD = 10;
-const PLACEHOLDER_RATIO = 2 / 3;
+export const GAP = 10;
+export const PAD = 10;
+export const PLACEHOLDER_RATIO = 2 / 3;
 /** Beyond this many editions the fan shows the first ones plus a "+N" tile into Compare. */
 const MAX_SHOWN = 12;
 /** The fan never grows wider than this many cover-widths; past it, covers overlap like a hand of cards. */
-const MAX_SPAN_IN_COVERS = 5.5;
+export const MAX_SPAN_IN_COVERS = 5.5;
 
 /**
  * Hovering a work deals every one of its editions out of the stack — side by side,

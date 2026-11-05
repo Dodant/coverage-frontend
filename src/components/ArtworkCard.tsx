@@ -10,7 +10,7 @@ import { useWork } from "@/lib/api/useWork";
 import { navigateWithArtwork } from "@/lib/transition";
 import { ArtworkImage } from "./ArtworkImage";
 import { SaveButton } from "./SaveButton";
-import { EditionsFan } from "./EditionsFan";
+import { EditionsFan, GAP, MAX_SPAN_IN_COVERS, PAD, PLACEHOLDER_RATIO } from "./EditionsFan";
 
 type Props = {
   a: Artwork;
@@ -45,9 +45,9 @@ export function ArtworkCard({ a: light, sizes, priority, caption = "hover", save
     const img = ref.current;
     if (!img) return;
     const r = img.getBoundingClientRect();
-    // Same cap as the fan itself: it never grows past ~5.5 cover-widths.
-    const natural = a.editions.reduce((s, e) => { const im = editionImage(a, e); return s + r.height * (im?.w && im?.h ? im.w / im.h : 2 / 3) + 10; }, 20);
-    const total = Math.min(natural, r.height * (2 / 3) * 5.5 + 20);
+    // Same geometry as the fan itself (its exported constants), so the dealing side is chosen from the real span.
+    const natural = a.editions.reduce((s, e) => { const im = editionImage(a, e); return s + r.height * (im?.w && im?.h ? im.w / im.h : PLACEHOLDER_RATIO) + GAP; }, PAD * 2);
+    const total = Math.min(natural, r.height * PLACEHOLDER_RATIO * MAX_SPAN_IN_COVERS + PAD * 2);
     // Deal toward whichever side has room; if neither fits, the fan compresses into the roomier side.
     const roomR = window.innerWidth - r.left - 16, roomL = r.right - 16;
     const dir: 1 | -1 = total <= roomR ? 1 : total <= roomL ? -1 : roomR >= roomL ? 1 : -1;
@@ -96,7 +96,7 @@ export function ArtworkCard({ a: light, sizes, priority, caption = "hover", save
         </div>
         {caption !== "none" && (
           <figcaption
-            className={`mt-3 flex items-baseline justify-between gap-3 transition-all duration-300 ease-[var(--ease-out-expo)] ${
+            className={`mt-3 flex items-baseline justify-between gap-3 transition-[opacity,transform] duration-300 ease-[var(--ease-out-expo)] ${
               caption === "hover" ? "opacity-100 md:translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100" : ""
             }`}
           >
