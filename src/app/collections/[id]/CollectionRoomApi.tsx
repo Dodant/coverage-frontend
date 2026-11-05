@@ -74,7 +74,8 @@ export function Room({ c, setC, editable, shared = false }: { c: CollectionRespo
   const [note, setNote] = useState(c.description ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  useEffect(() => setNote(c.description ?? ""), [c.description]);
+  // Resync only when another room is shown — a reply to some other edit must not wipe a note being typed.
+  useEffect(() => setNote(c.description ?? ""), [c.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { try { const v = localStorage.getItem("coverage:view") as CollectionView | null; if (v) setView(v); } catch {} }, []);
   const choose = (v: CollectionView) => { setView(v); try { localStorage.setItem("coverage:view", v); } catch {} };
 

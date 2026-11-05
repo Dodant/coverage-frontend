@@ -18,6 +18,7 @@ import { EASE_OUT } from "./motion";
 import { EditionsRail, editionLabel } from "./EditionsRail";
 import { EditionPlaceholder } from "./EditionPlaceholder";
 import { CompareOverlay } from "./CompareOverlay";
+import { routeId } from "@/lib/api/adapt";
 
 type Props = { a: Artwork; prev?: Artwork | null; next?: Artwork | null; related: Artwork[]; no: string };
 
@@ -31,6 +32,9 @@ function viewOf(a: Artwork, own: Edition, sel: Edition, img: CoverImage | null):
   const key = img.dominantColor ?? a.key;
   return {
     ...a,
+    // Saved or hung, this view stands for the selected edition: its own route and title.
+    id: sel.bookId && sel.bookKind ? routeId(sel.bookKind, sel.bookId) : a.id,
+    title: sel === own ? a.title : sel.title ?? a.title,
     w: img.w ?? 2,
     h: img.h ?? 3,
     ratioUnknown: !(img.w && img.h),
