@@ -1,0 +1,274 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   COVERAGE — design tokens
+   ───────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Base — themed (see :root / [data-theme="dark"] below) */
+  --color-paper: var(--c-paper);
+  --color-museum: var(--c-museum);
+  --color-ink: var(--c-ink);
+  --color-charcoal: #252327;
+  --color-ash: var(--c-ash);
+  --color-rule: var(--c-rule);
+  /* Fixed — for surfaces that are dark (or light) in every theme */
+  --color-snow: #fcfbf8;
+  --color-night: #151515;
+
+  /* Aurora */
+  --color-cobalt: #345cff;
+  --color-violet: #643de8;
+  --color-ultra: #9b67f5;
+  --color-coral: #ff7771;
+  --color-peach: #ffb58a;
+  --color-cyan: #8edfea;
+  --color-lime: #dfff78;
+
+  /* Type — Pretendard comes from its dynamic-subset stylesheet (layout.tsx) */
+  --font-pretendard: "Pretendard Variable";
+  --font-grotesk: var(--font-space-grotesk), var(--font-pretendard), system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), var(--font-pretendard), Georgia, serif;
+  --font-kr: var(--font-pretendard), var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+:root {
+  color-scheme: light;
+  --c-paper: #f5f3ed;
+  --c-museum: #fcfbf8;
+  --c-ink: #151515;
+  --c-ash: #6b6761;
+  --c-rule: #d9d5cb;
+  --c-shadow: 21 21 21;
+  --c-art-bg: #e9e5dc;
+  --c-sheet-1: #f1ede4;
+  --c-sheet-2: #ebe6db;
+  --c-sheet-line: #d3ccbd;
+  /* Fluid type scale */
+  --fs-wordmark: clamp(4.6rem, 20.5vw, 29rem);
+  --fs-mega: clamp(3.6rem, 13vw, 15rem);
+  --fs-display: clamp(2.8rem, 8vw, 8.5rem);
+  --fs-h1: clamp(2.2rem, 5.4vw, 5.5rem);
+  --fs-h2: clamp(1.6rem, 3.2vw, 3rem);
+  --fs-lede: clamp(1.15rem, 1.6vw, 1.6rem);
+  --fs-label: 0.6875rem;
+  --track-tight: -0.065em;
+  --track-display: -0.045em;
+  --track-label: 0.08em;
+
+  /* Spacing / layout */
+  --gutter: clamp(1rem, 3vw, 2.75rem);
+  --section-y: clamp(5rem, 12vw, 11rem);
+  --maxw: 1680px;
+
+  /* Grain */
+  --grain-opacity: 0.11;
+  --grain-opacity-aurora: 0.26;
+
+  /* Shadows — restrained, physical */
+  --shadow-art: 0 1px 1px rgb(var(--c-shadow) / 0.06), 0 6px 12px -4px rgb(var(--c-shadow) / 0.12), 0 22px 40px -18px rgb(var(--c-shadow) / 0.28);
+  --shadow-art-lift: 0 2px 2px rgb(var(--c-shadow) / 0.05), 0 14px 22px -8px rgb(var(--c-shadow) / 0.18), 0 40px 70px -26px rgb(var(--c-shadow) / 0.42);
+
+  /* Motion durations */
+  --dur-hover: 260ms;
+  --dur-view: 620ms;
+
+  /* Environmental aurora (overridden per artwork / per colour) */
+  --a1: #345cff;
+  --a2: #ff7771;
+  --a3: #8edfea;
+  --a4: #9b67f5;
+  --a5: #ffb58a;
+}
+
+/* Registered so colour changes interpolate smoothly. */
+@property --a1 { syntax: "<color>"; inherits: true; initial-value: #345cff; }
+@property --a2 { syntax: "<color>"; inherits: true; initial-value: #ff7771; }
+@property --a3 { syntax: "<color>"; inherits: true; initial-value: #8edfea; }
+@property --a4 { syntax: "<color>"; inherits: true; initial-value: #9b67f5; }
+@property --a5 { syntax: "<color>"; inherits: true; initial-value: #ffb58a; }
+
+html {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  scrollbar-gutter: stable;
+}
+body {
+  font-family: var(--font-kr);
+  background: var(--color-paper);
+  overflow-x: clip;
+  font-feature-settings: "ss01", "ss02";
+}
+::selection { background: var(--color-lime); color: var(--color-ink); }
+
+:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 3px; border-radius: 2px; }
+
+/* ── Utilities ─────────────────────────────────────────────── */
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+.display {
+  font-family: var(--font-grotesk);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  line-height: 0.86;
+}
+.serif-i { font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.02em; }
+.outline-text { -webkit-text-fill-color: transparent; -webkit-text-stroke: max(1px, 0.012em) currentColor; }
+.outline-ink { -webkit-text-stroke-color: var(--color-ink); }
+.wrap { max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
+.rule { border-color: var(--color-rule); }
+.balance { text-wrap: balance; }
+.pretty { text-wrap: pretty; }
+.kr { word-break: keep-all; }
+
+/* ── Aurora ────────────────────────────────────────────────── */
+.aurora { position: absolute; inset: 0; overflow: hidden; isolation: isolate; transition: --a1 1.4s var(--ease-in-out-soft), --a2 1.4s var(--ease-in-out-soft), --a3 1.4s var(--ease-in-out-soft), --a4 1.4s var(--ease-in-out-soft), --a5 1.4s var(--ease-in-out-soft); }
+.aurora__base { position: absolute; inset: 0; }
+.aurora__veil { position: absolute; inset: 0; pointer-events: none; }
+
+/* ── Film grain ────────────────────────────────────────────── */
+.grain {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  background-image: var(--grain-url);
+  background-size: 256px 256px;
+  opacity: var(--grain-o, var(--grain-opacity));
+  mix-blend-mode: var(--grain-blend, multiply);
+  animation: grain-shift 1.6s steps(6) infinite;
+  will-change: transform;
+}
+.grain--b { background-size: 389px 389px; opacity: calc(var(--grain-o, var(--grain-opacity)) * 0.7); mix-blend-mode: soft-light; animation-duration: 2.3s; animation-direction: reverse; }
+@keyframes grain-shift {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-3%, 2%, 0); }
+  40% { transform: translate3d(2%, -4%, 0); }
+  60% { transform: translate3d(-1%, 3%, 0); }
+  80% { transform: translate3d(4%, 1%, 0); }
+  100% { transform: translate3d(-2%, -2%, 0); }
+}
+
+/* ── Artwork ───────────────────────────────────────────────── */
+.art { display: block; width: 100%; height: auto; box-shadow: var(--shadow-art); background: var(--c-art-bg); }
+.art-frame { position: relative; transition: transform var(--dur-hover) var(--ease-out-expo); }
+/* Missing file: the frame stays, at the cover's proportions, so grids and rails keep their height. */
+.art-missing { display: flex; align-items: flex-end; padding: 7%; box-shadow: none; border: 1px dashed color-mix(in srgb, var(--c-ink) 40%, transparent); background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-ink) 5%, transparent) 0 1px, transparent 1px 12px); }
+.art-frame .art { transition: box-shadow var(--dur-hover) var(--ease-out-expo); }
+@media (hover: hover) {
+  .art-hover:hover .art-frame { transform: translate3d(0, -6px, 0); }
+  .art-hover:hover .art { box-shadow: var(--shadow-art-lift); }
+}
+/* A whisper of the page edge — the cover as a physical object. */
+.art-frame::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.16) 0, rgb(255 255 255 / 0.16) 0.6%, transparent 2.2%, transparent 97%, rgb(0 0 0 / 0.05) 100%);
+  mix-blend-mode: soft-light;
+}
+
+/* ── Shared-element (View Transitions API) ─────────────────── */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 420ms; animation-timing-function: var(--ease-in-out-soft); }
+::view-transition-group(artwork-active) { animation-duration: 640ms; animation-timing-function: var(--ease-out-expo); z-index: 50; }
+::view-transition-old(artwork-active), ::view-transition-new(artwork-active) { animation: none; mix-blend-mode: normal; height: 100%; }
+::view-transition-old(artwork-active) { opacity: 0; }
+
+/* ── Marquee ───────────────────────────────────────────────── */
+@keyframes marquee { to { transform: translate3d(-50%, 0, 0); } }
+.marquee { animation: marquee var(--marquee-d, 60s) linear infinite; will-change: transform; }
+
+/* ── Scroll cue ────────────────────────────────────────────── */
+@keyframes cue { 0% { transform: scaleY(0); transform-origin: top; } 45% { transform: scaleY(1); transform-origin: top; } 55% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+.cue-line { animation: cue 2.6s var(--ease-in-out-soft) infinite; }
+
+/* Range inputs */
+input[type="range"] { accent-color: var(--color-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .grain, .marquee, .cue-line { animation: none !important; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+@keyframes float { from { transform: translate3d(0, -6px, 0); } to { transform: translate3d(0, 8px, 0); } }
+
+/* Aurora ribbons — curved light (replaces point-like clouds) */
+.aurora__ribbon {
+  position: absolute;
+  inset: -12% -10%;
+  pointer-events: none;
+  will-change: transform;
+  animation: sway var(--d, 30s) var(--ease-in-out-soft) infinite alternate;
+  animation-delay: var(--delay, 0s);
+}
+.aurora__lines { inset: -6% -4%; }
+@keyframes sway {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate3d(var(--dx, 3vw), var(--dy, 2vh), 0) rotate(var(--rot, 1deg)) scale(1.06); }
+  100% { transform: translate3d(calc(var(--dx, 3vw) * -0.6), calc(var(--dy, 2vh) * -0.8), 0) rotate(calc(var(--rot, 1deg) * -0.7)) scale(0.97); }
+}
+@media (prefers-reduced-motion: reduce) { .aurora__ribbon { animation: none !important; } }
+.aurora.is-paused .aurora__ribbon, .aurora.is-paused .grain { animation-play-state: paused; }
+
+/* Apple-style translucent bar: frosted, colour-boosted backdrop + hairline. */
+.glass-bar {
+  background: color-mix(in srgb, var(--c-paper) 62%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.4s var(--ease-in-out-soft), border-color 0.4s var(--ease-in-out-soft);
+}
+.glass-bar.is-scrolled { background: color-mix(in srgb, var(--c-paper) 72%, transparent); border-bottom-color: color-mix(in srgb, var(--c-ink) 8%, transparent); }
+.glass-bar.is-open { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-bar { background: color-mix(in srgb, var(--c-paper) 96%, transparent); }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   Dark theme — black ground, white grain. Covers are never altered.
+   Applied by [data-theme="dark"] on <html> (set from the toggle or the OS preference).
+   ───────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-paper: #0a0a0b;
+  --c-museum: #131315;
+  --c-ink: #f2f0ea;
+  --c-ash: #9a958d;
+  --c-rule: #2b2a2d;
+  --c-shadow: 0 0 0;
+  --c-art-bg: #1c1b1e;
+  --c-sheet-1: #1d1c20;
+  --c-sheet-2: #18171b;
+  --c-sheet-line: #34333a;
+  --grain-opacity: 0.075;
+}
+:root[data-theme="dark"] ::selection { color: #151515; }
+
+/* White grain: swap the tile for the white one and add light instead of darkening. */
+:root[data-theme="dark"] .grain {
+  background-image: var(--grain-white) !important;
+  mix-blend-mode: screen !important;
+  opacity: calc(var(--grain-o, var(--grain-opacity)) * 0.55);
+}
+:root[data-theme="dark"] .grain--b {
+  background-image: var(--grain-white-b) !important;
+  opacity: calc(var(--grain-o, var(--grain-opacity)) * 0.35);
+}
+
+/* Light aurora presets sit on black in the dark theme: drop the paper base and veils, white contour lines. */
+:root[data-theme="dark"] .aurora:not(.aurora--night) .aurora__base { background: var(--c-paper) !important; }
+:root[data-theme="dark"] .aurora:not(.aurora--night) .aurora__veil { display: none; }
+:root[data-theme="dark"] .aurora { --aurora-line: rgba(255, 255, 255, 0.14); }
+/* On black, the light presets glow too much — dim them so the ground still reads black. */
+:root[data-theme="dark"] .aurora:not(.aurora--night) { --aurora-dim: 0.58; }
