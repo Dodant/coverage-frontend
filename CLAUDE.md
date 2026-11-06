@@ -64,5 +64,5 @@ Next.js 15.5 App Router · React 19 · TypeScript · Tailwind CSS 4 (`@theme` �
 - 생성: `npm run covers` (`scripts/build-covers.mjs`, sharp). `data/changbi-meta.json`의 각 항목을 `../changbi-press/covers`의 `{id}` 또는 `{id}_*` 파일과 width×height로 대조해 폭 640/1400 WebP로 만든다(확대 없음, 비율 유지, CMYK는 sRGB로). 원본 폴더는 `COVERS_SRC`로 바꿀 수 있음
 
 ## Git
-- 작업 브랜치 `feat/frontend`. **push하지 않는다** (사용자가 요청할 때만)
+- 기본 브랜치 `main`. 새 작업은 최신 `main`에서 새 브랜치를 만들어 하고 PR로 합친다(`main`에 직접 커밋하지 않음). **push하지 않는다** (사용자가 요청할 때만)
 - 커밋 메시지는 한국어. 작성자: `git -c user.name="Maestr Oh" -c user.email="ohho0506@gmail.com" commit`

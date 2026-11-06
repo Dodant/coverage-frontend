@@ -3,7 +3,7 @@
 이전 세션(Claude Code)에서 이어받는 메모. 공통 규칙은 `CLAUDE.md`.
 
 ## 지금 상태
-- 브랜치 `feat/frontend` (push 안 함)
+- 2026-11-06: `feat/frontend`를 PR #1로 `main`에 스쿼시 머지(`2a962da`)하고 브랜치 삭제. 아래 커밋 해시는 그 브랜치의 기록(지금 `main`에는 한 커밋으로 합쳐짐)
   - `d05ae6a` COVERAGE 프론트엔드 초기 구현 (목업 데이터)
   - `f172718` 백엔드 API 연동 (검색·작품·로그인·좋아요·전시)
   - `3ffab6b` Claude Code 이어받기용 CLAUDE.md, HANDOFF.md 추가
