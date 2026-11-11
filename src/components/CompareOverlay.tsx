@@ -7,20 +7,18 @@ import type { Artwork } from "@/lib/artworks";
 import { editionImage, trimMm } from "@/lib/artworks";
 import { EditionPlaceholder } from "./EditionPlaceholder";
 import { editionLabel } from "./EditionsRail";
-import { useDialogFocus } from "./useDialogFocus";
+import { useModalDialog } from "./useModalDialog";
 
 /** Every edition of a work hung side by side at the same height, so only the design is compared. */
 export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void }) {
-  const root = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDialogElement>(null);
   const close = useRef<HTMLButtonElement>(null);
-  useDialogFocus(root, close);
+  useModalDialog(root, close, onClose);
   useEffect(() => {
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
-    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", k);
-    return () => { window.removeEventListener("keydown", k); document.documentElement.style.overflow = prev; };
-  }, [onClose]);
+    return () => { document.documentElement.style.overflow = prev; };
+  }, []);
 
   const H = "56vh";
   const known = a.editions.map((e) => trimMm(e.format));
@@ -28,10 +26,10 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
 
 
   return createPortal(
-    <motion.div
+    <motion.dialog
       ref={root}
-      role="dialog" aria-modal="true" aria-label={`Compare editions of ${a.title}`}
-      className="fixed inset-0 z-[80] flex flex-col overflow-y-auto bg-[#141217] text-snow"
+      role="dialog" aria-label={`Compare editions of ${a.title}`}
+      className="modal open:flex flex-col overflow-y-auto bg-[#141217] text-snow"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
     >
       <div className="wrap flex w-full flex-wrap items-end justify-between gap-6 pt-6">
@@ -69,7 +67,7 @@ export function CompareOverlay({ a, onClose }: { a: Artwork; onClose: () => void
       <p className="label wrap w-full pb-6 pt-4 opacity-60">
         모든 판을 같은 높이로 맞춰 표지 디자인만 비교합니다 · Esc to close
       </p>
-    </motion.div>,
+    </motion.dialog>,
     document.body,
   );
 }

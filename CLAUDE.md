@@ -27,7 +27,7 @@ npm run e2e            # Playwright E2E. mock-api(:4110), API 모드 dev(:3100, 
 ## 테스트
 - 프로젝트 둘: `api`(`e2e/*.spec.ts`, API 모드 + `scripts/mock-api.mjs`, 목업 데이터 모드와 같은 컴포넌트 + 로그인·좋아요·전시)와 `mock`(`e2e/mock/`, 목업 데이터 모드의 localStorage 즐겨찾기·전시). 포트와 `distDir`가 따로라 `npm run dev`를 켜 둔 채 돌려도 됨. `e2e/global-setup.ts`가 `public/covers`가 비었으면 바로 실패시킴
 - mock-api의 `GET /api/__requests`는 받은 요청 경로 로그(테스트 전용) — 차단된 id가 백엔드에 닿지 않았음을 확인할 때 씀
-- 다루는 것: 표지 비율 왜곡 0(`img.art`의 offset 크기 vs natural 크기), 그리드 행·팬·비교의 높이 통일, 가입 검증 `details` 표시, 좋아요, 전시 생성·링크 공개·익명 공유, 잘못된 액세스 토큰 → 갱신 → 재시도, 갱신 5xx에도 세션 유지, 두 탭 동시 갱신, UUID가 아닌 라우트 id → 404(백엔드 호출 없음), 비공개 전환 즉시 공유 링크 404, 크기 없는 표지의 전시실 높이 통일, Compare 오버플로·포커스 트랩·복귀, 보안 헤더, 폰트 파일 500KB 미만, API 모드 JS에 목업 데이터 없음
+- 다루는 것: Hero 이미지 하나만 fetchpriority high, 피커 popover 위치·닫기, Inspect 네이티브 모달, 비밀번호 보기 토글, 표지 비율 왜곡 0(`img.art`의 offset 크기 vs natural 크기), 그리드 행·팬·비교의 높이 통일, 가입 검증 `details` 표시, 좋아요, 전시 생성·링크 공개·익명 공유, 잘못된 액세스 토큰 → 갱신 → 재시도, 갱신 5xx에도 세션 유지, 두 탭 동시 갱신, UUID가 아닌 라우트 id → 404(백엔드 호출 없음), 비공개 전환 즉시 공유 링크 404, 크기 없는 표지의 전시실 높이 통일, Compare 오버플로·포커스 트랩·복귀, 보안 헤더, 폰트 파일 500KB 미만, API 모드 JS에 목업 데이터 없음
 - 셀렉터는 role·label·aria-label 기준. 새 UI에 테스트가 붙을 수 있게 접근성 이름을 유지할 것
 
 ## 스택
@@ -57,7 +57,7 @@ Next.js 15.5 App Router · React 19 · TypeScript · Tailwind CSS 4 (`@theme` �
 - 상단바: 애플식 글래스(`.glass-bar`, `saturate(180%) blur(20px)`)
 - 여러 판본: **작품별 보기**가 기본. 카드에 호버하면 모든 판본이 촤라락 펼쳐짐(`EditionsFan`), 판본이 많으면 카드처럼 겹치고 12개 초과는 "+N → Compare"
 - 사용자가 빼라고 한 것 — 다시 넣지 말 것: "PICK TWO → SPLIT INSPECT", scale(실제 크기) 토글
-- `prefers-reduced-motion` 존중, 키보드 접근(Escape 닫기, focus) 유지. 모달(Compare·Inspect)은 `useDialogFocus`로 포커스 가두기·연 버튼으로 복귀
+- `prefers-reduced-motion` 존중, 키보드 접근(Escape 닫기, focus) 유지. 모달(Compare·Inspect)은 네이티브 `<dialog>`+`showModal()`(`useModalDialog`: 포커스 가두기·배경 inert·Esc·연 버튼으로 복귀), "전시에 추가" 피커는 네이티브 `popover`(`useAnchoredPopover`: Esc·바깥 클릭 닫기, 버튼 위에 JS로 배치 — Chrome에 CSS anchor positioning이 없어서)
 
 ## 이미지·권리
 - `public/covers/{id}-640.webp`, `-1400.webp`는 **git에 없음**(.gitignore). 창비 보도자료 이미지라 공개 배포 전 창비 허락 확인 필요

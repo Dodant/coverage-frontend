@@ -15,6 +15,8 @@ import { EASE_OUT } from "../motion";
 type Pos = [left: string, top: string, width: string];
 type Slot = { d: Pos; m?: Pos; rot: number; z: number; depth: number; label: "l" | "r" };
 // Desktop & mobile placements are art-directed separately.
+// Slot 2 is the largest cover on both, so it alone gets fetchpriority="high"; slots without `m`
+// are hidden on mobile and load lazily so phones never fetch them.
 const SLOTS: Slot[] = [
   { d: ["4.5%", "19%", "clamp(7.5rem,12.5vw,15rem)"], m: ["5%", "24%", "35vw"], rot: -5, z: 2, depth: 18, label: "r" },
   { d: ["36.5%", "23%", "clamp(5.5rem,8.6vw,10.5rem)"], rot: 4, z: 4, depth: 34, label: "r" },
@@ -47,7 +49,7 @@ function Floating({ a, s, i, mx, my }: { a: Artwork; s: Slot; i: number; mx: Mot
           className="art-hover group block"
           onClick={(e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); navigateWithArtwork(router.push, `/artwork/${a.id}`, ref.current); }}
         >
-          <div className="art-frame"><ArtworkImage a={a} priority sizes="18vw" imgRef={ref} /></div>
+          <div className="art-frame"><ArtworkImage a={a} priority={i === 2} loading={i === 2 || s.m ? "eager" : "lazy"} sizes="18vw" imgRef={ref} /></div>
           <span className={`label absolute top-full mt-2 hidden w-[16em] text-ink/75 ${i === 4 ? "" : "lg:block"} ${s.label === "l" ? "right-0 text-right" : "left-0"}`}>
             fig. {String(i + 1).padStart(2, "0")} — <span className="kr normal-case tracking-normal">{a.title}</span>, {a.year}
           </span>
