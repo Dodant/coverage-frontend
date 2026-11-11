@@ -5,38 +5,36 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Artwork } from "@/lib/artworks";
 import { src } from "@/lib/artworks";
-import { useDialogFocus } from "./useDialogFocus";
+import { useModalDialog } from "./useModalDialog";
 
 /** Full-screen inspection: wheel / buttons / keys to zoom, drag to pan. */
 export function InspectOverlay({ a, onClose }: { a: Artwork; onClose: () => void }) {
-  const root = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDialogElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const zoom = useCallback((d: number) => setScale((s) => { const n = Math.min(5, Math.max(1, +(s + d).toFixed(2))); if (n === 1) setPos({ x: 0, y: 0 }); return n; }), []);
 
-  useDialogFocus(root, closeBtn);
+  useModalDialog(root, closeBtn, onClose);
   useEffect(() => {
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
     const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
       if (e.key === "+" || e.key === "=") zoom(0.5);
       if (e.key === "-") zoom(-0.5);
       if (e.key === "0") { setScale(1); setPos({ x: 0, y: 0 }); }
     };
     window.addEventListener("keydown", key);
     return () => { window.removeEventListener("keydown", key); document.documentElement.style.overflow = prev; if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); };
-  }, [onClose, zoom]);
+  }, [zoom]);
 
   return createPortal(
-    <motion.div
+    <motion.dialog
       ref={root}
       role="dialog"
-      aria-modal="true"
       aria-label={`Inspect ${a.title}`}
-      className="fixed inset-0 z-[80] flex flex-col bg-[#0d0c10] text-snow"
+      className="modal open:flex flex-col bg-[#0d0c10] text-snow"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
     >
       <div className="flex items-center justify-between gap-4 px-[var(--gutter)] py-4">
@@ -74,7 +72,7 @@ export function InspectOverlay({ a, onClose }: { a: Artwork; onClose: () => void
         />
       </div>
       <p className="label px-[var(--gutter)] py-3 text-snow/50">Scroll or +/− to zoom · drag to pan · double-click to toggle · Esc to close</p>
-    </motion.div>,
+    </motion.dialog>,
     document.body,
   );
 }

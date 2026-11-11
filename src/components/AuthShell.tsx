@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AuroraBackground } from "./AuroraBackground";
 
 /**
@@ -39,21 +40,34 @@ export function AuthShell({ kicker, title, children, aside }: { kicker: string; 
 export function Field({ label, name, type = "text", value, onChange, error, autoComplete, hint, required }: {
   label: string; name: string; type?: string; value: string; onChange: (v: string) => void; error?: string; autoComplete?: string; hint?: string; required?: boolean;
 }) {
-  return (
-    <label className="block">
-      <span className="label text-ink/70">{label}</span>
+  const [shown, setShown] = useState(false);
+  const secret = type === "password";
+  const input = (
       <input
+        id={name}
         name={name}
-        type={type}
+        type={secret && shown ? "text" : type}
         value={value}
         required={required}
         autoComplete={autoComplete}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${name}-err` : undefined}
         onChange={(e) => onChange(e.target.value)}
-        className={`kr mt-1 h-12 w-full border-b bg-transparent text-[17px] outline-none ${error ? "border-coral" : "border-ink/40 focus:border-ink"}`}
+        className={`kr mt-1 h-12 w-full border-b bg-transparent text-[17px] outline-none ${secret ? "pr-20" : ""} ${error ? "border-coral" : "border-ink/40 focus:border-ink"}`}
       />
+  );
+  return (
+    <div className="block">
+      <label htmlFor={name} className="label block text-ink/70">{label}</label>
+      {secret ? (
+        <div className="relative">
+          {input}
+          <button type="button" aria-pressed={shown} aria-controls={name} aria-label="Show password" onClick={() => setShown((v) => !v)} className="label absolute bottom-0 right-0 h-12 px-1 text-ink/60 hover:text-ink">
+            {shown ? "Hide · 숨김" : "Show · 보기"}
+          </button>
+        </div>
+      ) : input}
       {error ? <span id={`${name}-err`} className="kr mt-1 block text-[13px] text-coral">{error}</span> : hint ? <span className="kr mt-1 block text-[12px] text-ash">{hint}</span> : null}
-    </label>
+    </div>
   );
 }
